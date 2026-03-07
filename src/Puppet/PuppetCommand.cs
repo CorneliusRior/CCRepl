@@ -5,15 +5,25 @@ namespace Puppet;
 public class PuppetCommand
 {
     public required string Name { get; init; }
-    public string? Address;
+    public IReadOnlyList<string> Address { get; internal set; } = Array.Empty<string>();
+    public string AddressString { get; internal set; } = "";
     public IReadOnlyList<string> Aliases { get; init; }
     public IReadOnlyList<PuppetCommand> Children { get; init; }
     
+    // Function:
     public Func<PuppetContext, IReadOnlyList<string>, CancellationToken, Task>? ExecuteAsync { get; init; }
     public bool CanExecute => ExecuteAsync is not null;
 
-    public Func<PuppetContext, IReadOnlyList<string>, CancellationToken, Task>? TestAsync { get; init; }
-    public bool CanTest => ExecuteAsync is not null;
+    public Func<PuppetContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? TestAsync { get; init; }
+    public bool CanTest => TestAsync is not null;
+
+
+    public Func<PuppetContext, string, CancellationToken, Task>? ExecuteJsonAsync { get; init; }
+    public bool CanExecuteJson => ExecuteJsonAsync is not null;
+
+    public Func<PuppetContext, string, CancellationToken, Task<bool>>? TestJsonAsync { get; init; }
+    public bool CanTestJson => TestJsonAsync is not null;
+
 
     public string? Usage { get; init; }
     public string? Description { get; init; }
@@ -24,6 +34,7 @@ public class PuppetCommand
     public PuppetCommand(
         string name,
         Func<PuppetContext, IReadOnlyList<string>, CancellationToken, Task>? executeAsync = null,
+        Func<PuppetContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? testAsync = null,
         IReadOnlyList<string>? aliases = null,
         string? usage = null,
         string? description = null,
@@ -36,6 +47,7 @@ public class PuppetCommand
         Aliases = aliases ?? Array.Empty<string>();
         Children = children ?? Array.Empty<PuppetCommand>();
         ExecuteAsync = executeAsync ?? null;
+        TestAsync = testAsync ?? null;
         Usage = usage ?? null;
         Description = description ?? null;
         Examples = examples ?? Array.Empty<string>();
@@ -44,7 +56,7 @@ public class PuppetCommand
 
     public string PrintShort(int col1space, int col2space, HelpAttribute help, bool oneline = true)
     {
-        string col1 = $"{Address}:".PadRight(col1space);        
+        string col1 = $"{AddressString}:".PadRight(col1space);        
         string col2 = help switch
         {
             HelpAttribute.Aliases           => $"[ {string.Join(", ", Aliases)} ]",
@@ -59,7 +71,7 @@ public class PuppetCommand
     }
 
     public string PrintLong() =>
-        "*" + Address + "\n" +
+        "*" + AddressString + "\n" +
         (Aliases.Count > 0 ? $"Aliases: [ {string.Join(", ", Aliases)} ]\n" : "") +
         (Usage is not null ? $"Usage: {Usage}\n" : "") +
         (Description is not null ? $"Description: {Description}\n" : "") +

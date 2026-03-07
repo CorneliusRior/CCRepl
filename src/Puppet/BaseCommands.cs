@@ -43,106 +43,147 @@ If two arguments are given, the first argument will be interpreted as a Help Att
             name: "Commands",
             executeAsync: CommandsAsync,
             aliases: ["CommandList", "cmd"],
-            description: "List all commands"
+            description: "List all commands",
+            children:
+            [
+                new PuppetCommand(
+                    name: "Aliases",
+                    executeAsync: CommandAliasesAsync,
+                    aliases: ["All"],
+                    description: "Lists all commands and aliases for each command."
+                )
+            ]
         ),
+
+        new PuppetCommand(
+            name: "Test",
+            executeAsync: TestAsync,
+            usage: "Tast <Command> (arguments ... )",
+            description: "Runs the TestAsync method on specified command with specified arguments."
+        )
     ];   
 
-
-    private Task HelpAsync(PuppetContext context, IReadOnlyList<string> args, CancellationToken cancellationToken)
+    private Task HelpAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken cancellationToken)
     {
         if (args.Count == 0)
         {
-            context.WriteLine("Printing all commands. Try 'help <Command>' for more information:");
-            PrintShort(context, context.GetAllCommands(), HelpAttribute.Description);
-            return Task.CompletedTask;
+            ctx.WriteLine("Printing all commands. Try 'help <Command>' for more information:");
+            PrintShort(ctx, HelpAttribute.Description);
         }
-        if (args.Count == 1)
+        else if (args.Count == 1)
         {
             string arg1 = args.String(0, "Help Attribute/Command Head");
             if (!Enum.TryParse<HelpAttribute>(arg1, true, out HelpAttribute help))
             {
-                IReadOnlyList<PuppetCommand> filtered = context.GetCommandAndDescendants(arg1.Split('.'));
-                if (filtered.Count == 0) context.WriteLine($"No commands found for '{arg1}'.");
-                else PrintLong(context, filtered);
-                return Task.CompletedTask;
+                ctx.WriteLine($"Printing all commands starting with '{arg1}':");
+                PrintLong(ctx, arg1);
             }
-            context.WriteLine($"Printing all commands and corresponding {help.ToString()}");
-            PrintShort(context, context.GetAllCommands(), help);
-            return Task.CompletedTask;
+            else
+            {
+                ctx.WriteLine($"Printing all commands and corresponding {help.ToString()}:");
+                PrintShort(ctx, help);
+            }
         }
         else
         {
             string helpStr = args.String(0, "HelpAttribute");
             string headStr = args.String(1, "CommandHead");
             HelpAttribute helpAtt = Enum.Parse<HelpAttribute>(helpStr);
-            IReadOnlyList<PuppetCommand> filtered = context.GetCommandAndDescendants(headStr.Split(' '));
-            context.WriteLine($"Printing all commands containing CommandGead '{headStr}' and corresponding {helpAtt.ToString()}:");
-            PrintShort(context, Commands, helpAtt);
-            return Task.CompletedTask;
+            ctx.WriteLine($"Printing all commands starting with '{helpStr}' and corresponding {helpAtt.ToString()}:");
+            PrintShort(ctx, helpAtt, headStr, false);            
         }
-        
+        return Task.CompletedTask;
+
     }
 
-    private Task HelpListAsync(PuppetContext context, IReadOnlyList<string> args, CancellationToken cancellationToken)
+    private Task HelpListAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken cancellationToken)
     {
         if (args.Count == 0)
         {
-            context.WriteLine("Printing all commands.");
-            PrintShort(context, context.GetAllCommands(), HelpAttribute.Description);
-            return Task.CompletedTask;
+            ctx.WriteLine("Printing all commands. Try 'help <Command>' for more information:");
+            PrintShort(ctx, HelpAttribute.Description, "", true);            
         }
-        if (args.Count == 1)
+        else if (args.Count == 1)
         {
             string arg1 = args.String(0, "Help Attribute/Command Head");
             if (!Enum.TryParse<HelpAttribute>(arg1, true, out HelpAttribute help))
             {
-                IReadOnlyList<PuppetCommand> filtered = context.GetCommandAndDescendants(arg1.Split('.'));
-                if (filtered.Count == 0) context.WriteLine($"No commands found for '{arg1}'.");
-                else PrintLong(context, filtered);
-                return Task.CompletedTask;
+                ctx.WriteLine($"Printing all commands starting with '{arg1}':");
+                PrintShort(ctx, HelpAttribute.Description, arg1, true);                
             }
-            context.WriteLine($"Printing all commands and corresponding {help.ToString()}");
-            PrintShort(context, context.GetAllCommands(), help);
-            return Task.CompletedTask;
+            else
+            {
+                ctx.WriteLine($"Printing all commands and corresponding {help.ToString()}:");
+                PrintShort(ctx, help, "", true);
+            }            
         }
         else
         {
             string helpStr = args.String(0, "HelpAttribute");
             string headStr = args.String(1, "CommandHead");
             HelpAttribute helpAtt = Enum.Parse<HelpAttribute>(helpStr);
-            IReadOnlyList<PuppetCommand> filtered = context.GetCommandAndDescendants(headStr.Split(' '));
-            context.WriteLine($"Printing all commands containing CommandGead '{headStr}' and corresponding {helpAtt.ToString()}:");
-            PrintLong(context, Commands);
-            return Task.CompletedTask;
+            ctx.WriteLine($"Printing all commands starting with '{helpStr}' and corresponding {helpAtt.ToString()}:");
+            PrintShort(ctx, helpAtt, headStr, true);
         }
-    }
-
-    private void PrintShort(PuppetContext context, IReadOnlyList<PuppetCommand> commands, HelpAttribute help, bool oneline = false)
-    {
-        context.WriteLine("");
-        int col1space = Math.Min(commands.Max(c => c.Address!.Length) + 3, 100);
-        int col2space = Math.Max(context.OneLineMaxWidth - col1space, 0);
-        foreach (PuppetCommand c in commands) context.WriteLine(c.PrintShort(col1space, col2space, help, oneline));
-    }
-
-    private Task HelpFullAsync(PuppetContext context, IReadOnlyList<string> args, CancellationToken cancellationToken)
-    {
-        if (args.Count == 0) PrintLong(context, context.GetAllCommands());
-        else PrintLong(context, context.GetCommandAndDescendants(args.String(0, "Command head").Split('.')));
         return Task.CompletedTask;
     }
 
-    private void PrintLong(PuppetContext context, IReadOnlyList<PuppetCommand> commands)
+    private void PrintShort(PuppetContext ctx, HelpAttribute help, string searchTerm = "", bool oneline = false)
     {
-        context.WriteLine("");
-        foreach (PuppetCommand c in commands) context.WriteLine(c.PrintLong());
+        ctx.WriteLine("");
+        List<PuppetCommand> commands = ctx.SearchDictionary(searchTerm);
+        int col1space = Math.Min(commands.Max(c => c.AddressString!.Length) + 3, 100);
+        int col2space = Math.Max(ctx.OneLineMaxWidth - col1space, 0);
+        foreach (PuppetCommand c in commands) ctx.WriteLine(c.PrintShort(col1space, col2space, help, oneline));
     }
 
-    private Task CommandsAsync(PuppetContext context, IReadOnlyList<string> args, CancellationToken cancellationToken)
+    private Task HelpFullAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken cancellationToken)
     {
-        context.WriteLine("All commands:");
-        List<PuppetCommand> orderedCommands = context.GetAllCommands().OrderBy(c => c.Address).ToList();
-        foreach (PuppetCommand c in orderedCommands) context.WriteLine(c.Address!);
+        if (args.Count == 0)
+        {
+            ctx.WriteLine("Printing full information for all commands:");
+            PrintLong(ctx);
+        }
+        else
+        {
+            string searchTerm = args.String(0, "Search Term");
+            ctx.WriteLine($"Printing full information for all commands starting with {searchTerm}:");
+            PrintLong(ctx, searchTerm);
+
+        }
         return Task.CompletedTask;
+    }
+
+    private void PrintLong(PuppetContext ctx, string searchTerm = "")
+    {
+        ctx.WriteLine("");
+        List<PuppetCommand> commands = ctx.SearchDictionary(searchTerm);
+        foreach (PuppetCommand c in commands) ctx.WriteLine(c.PrintLong());
+    }
+
+    private Task CommandsAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken cancellationToken)
+    {
+        ctx.WriteLine("Printing all commands. Try 'help <command>' for more information:");
+        List<PuppetCommand> orderedCommands = ctx.SearchDictionary();
+        foreach (PuppetCommand c in orderedCommands) ctx.WriteLine(c.AddressString!);
+        return Task.CompletedTask;
+    }
+
+    private Task CommandAliasesAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+    {
+        int col = Math.Min(ctx.AliasIndex.Max(kv => kv.Key.Length), (ctx.OneLineMaxWidth - 10) / 2);
+        ctx.WriteLine("Printing all commands and aliases. Try 'help <command> for more information:");
+        ctx.WriteLine("");
+        foreach (var kv in ctx.AliasIndex.OrderBy(kv => kv.Value.AddressString)) ctx.WriteLine($"{kv.Key.Truncate(col).PadRight(col)} ({kv.Value.AddressString.Truncate(col)})");
+        return Task.CompletedTask;
+    }
+
+    private async Task TestAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+    {
+        string commandHead = args[0];
+        IReadOnlyList<string> testArgs = args.Skip(1).ToList();
+        bool success = await ctx.TestCommandAsync(commandHead, args, ct);
+        if (success) ctx.WriteLine($"No issues found: '{string.Join(' ', args)}'.");
+        else ctx.WriteLine($"Failed test: '{string.Join(' ', args)}'.");
     }
 }

@@ -11,23 +11,44 @@ namespace Puppet.Cli
             new PuppetCommand(
                 name: "Assessment",                
                 executeAsync: ConfirmAsync,
+                testAsync: ConfirmTestAsync,
                 description: "Asks for your assessment on a number of topics."               
             )
         ];
 
-        private async Task ConfirmAsync(PuppetContext  context, IReadOnlyList<string> args, CancellationToken cancellationToken)
+        private async Task ConfirmAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken cancellationToken)
         {
-            bool pizza = await context.ConfirmRequireAsync("Do you like pizza?", "Sorry, I didn't hear that.");
-            bool hotDogs = await context.ConfirmRequireAsync("Do you like hotdogs?", "I can't understand you.");
-            bool dinosaurs = await context.ConfirmRequireAsync("Do you like dinosaurs", "Too ambiguous, do you or do you not like dinosaurs?");
-            double maxDeadLift = await context.RequireDoubleAsync("What is your max deadlift?", "Don't be shy, DYEL?");
+            bool pizza = await ctx.ConfirmRequireAsync("Do you like pizza?", "Sorry, I didn't hear that.");
+            bool hotDogs = await ctx.ConfirmRequireAsync("Do you like hotdogs?", "I can't understand you.");
+            bool dinosaurs = await ctx.ConfirmRequireAsync("Do you like dinosaurs", "Too ambiguous, do you or do you not like dinosaurs?");
+            double maxDeadLift = await ctx.RequireAsync(
+                "What is your max deadlift?",
+                s => (double.TryParse(s, out double v), v),
+                "Don't be shy, DYEL?",
+                -1, "No I don't", "No", "Never", "What does DYEL mean?", "I've never deadlifted", " ", "default", "fallback");
 
-            context.WriteLine("Here is your assessment of various things:");
-            context.WriteLine(pizza ? "You like pizza :)" : "You don't like pizza :(");
-            context.WriteLine(hotDogs ? "You like hotdogs :)" : "You don't like hotdogs :(");
-            context.WriteLine(dinosaurs ? "You like dinosaurs :)" : "You don't like dunosaurs :(");
-            context.WriteLine($"Your max deadlift is {maxDeadLift}Kg, {(maxDeadLift < 100 ? "DYEL?" : maxDeadLift < 200 ? "Natty" : "Not natty")}");
+            ctx.WriteLine("Here is your assessment of various things:");
+            ctx.WriteLine(pizza ? "You like pizza :)" : "You don't like pizza :(");
+            ctx.WriteLine(hotDogs ? "You like hotdogs :)" : "You don't like hotdogs :(");
+            ctx.WriteLine(dinosaurs ? "You like dinosaurs :)" : "You don't like dunosaurs :(");
+            if (maxDeadLift > 1) ctx.WriteLine($"Your max deadlift is {maxDeadLift}Kg, {(maxDeadLift < 100 ? "DYEL?" : maxDeadLift < 200 ? "Natty" : "Not natty")}");
+            else ctx.WriteLine("Doesn't lift.");
             return;
+        }
+
+        private async Task <bool> ConfirmTestAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            bool ok = await ctx.RequestAsync(
+                "Oh uh, you're testing us? Uhm, I guess, what is your favourite colour?",
+                s => (true, !s.Equals("pink", StringComparison.OrdinalIgnoreCase)));
+            if (ok)
+            {
+                ctx.WriteLine("Okay that's cool.");
+                return true;
+            }
+            ctx.WriteLine("Eww pink is a GIRLS color >:(");
+            return false;
+
         }
     }
 }
