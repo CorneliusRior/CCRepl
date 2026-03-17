@@ -1,3 +1,5 @@
+using static Puppet.CmdBuilder;
+
 namespace Puppet;
 
 public sealed class BaseCommands : IPuppetCommandSet
@@ -42,7 +44,7 @@ If two arguments are given, the first argument will be interpreted as a Help Att
         new PuppetCommand(
             name: "Commands",
             executeAsync: CommandsAsync,
-            aliases: ["CommandList", "cmd", "Commands", "Command"],
+            aliases: ["CommandList", "cmd", "Command"],
             description: "List all commands",
             children:
             [
@@ -60,7 +62,16 @@ If two arguments are given, the first argument will be interpreted as a Help Att
             executeAsync: TestAsync,
             usage: "Tast <Command> (arguments ... )",
             description: "Runs the TestAsync method on specified command with specified arguments."
-        )
+        ),
+
+        Cmd("Json").Description("Commands for manual use of Json Commands").Children(
+            Cmd("Run").Exec(RunJson).Description("Run a Json Command")
+                .Usage("Json.Run <string CommandHead>")
+                .Build(),
+            Cmd("Test").Exec(TestJson).Description("Tests a JsonCommand")
+                .Usage("Json.Test <string CommandHead>")
+                .Build()
+        ).Build()
     ];   
 
     private Task HelpAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
@@ -183,6 +194,22 @@ If two arguments are given, the first argument will be interpreted as a Help Att
         string commandHead = args[0];
         IReadOnlyList<string> testArgs = args.Skip(1).ToList();
         bool success = await ctx.TestCommandAsync(commandHead, args, ct);
+        if (success) ctx.WriteLine($"No issues found: '{string.Join(' ', args)}'.");
+        else ctx.WriteLine($"Failed test: '{string.Join(' ', args)}'.");
+    }
+
+    private async Task RunJson(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+    {
+        string commandHead = args.String(0, "CommandHead");
+        string json = await ctx.ReadLineAsync("Please enter Json argument:");
+        await ctx.ExecuteJsonAsync(commandHead, json);
+    }
+
+    private async Task TestJson(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+    {
+        string commandHead = args[0];
+        string json = await ctx.ReadLineAsync("Please enter Json argument:");
+        bool success = await ctx.TestJsonAsync(commandHead, json, ct);
         if (success) ctx.WriteLine($"No issues found: '{string.Join(' ', args)}'.");
         else ctx.WriteLine($"Failed test: '{string.Join(' ', args)}'.");
     }

@@ -130,6 +130,35 @@ namespace Puppet
         }
 
         /// <summary>
+        /// Used for required strings. Will only return if given string is not null or whitespace.
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="prompt">What user is presented with.</param>
+        /// <param name="retryPrompt">What user is presented with if input is null or white space.</param>
+        /// <returns></returns>
+        public static async Task<string> RequireString(this PuppetContext ctx, string prompt, string retryPrompt)
+        {
+            while (true)
+            {
+                string? input = await ctx.ReadLineAsync(prompt);
+                if (!string.IsNullOrWhiteSpace(input)) return input;
+                else ctx.WriteLine(retryPrompt);
+            }
+        }
+
+        /// <summary>
+        /// Used for optional strings. If input is null or whitespace, will return null.
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="prompt">What user is presented with.</param>
+        /// <returns></returns>
+        public static async Task<string?> RequestStringNullable(this PuppetContext ctx, string prompt)
+        {
+            string? input = await ctx.ReadLineAsync(prompt);
+            if (string.IsNullOrWhiteSpace(input)) return null;
+            else return input;
+        }
+        /// <summary>
         /// Finds a command in dictionary. If it is left blank, returns every command. If it cannot be found in dictionary, will return findings in Aliases.
         /// </summary>
         /// <param name="ctx"></param>

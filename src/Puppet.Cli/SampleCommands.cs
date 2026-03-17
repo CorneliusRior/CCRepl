@@ -1,4 +1,5 @@
-﻿using System;
+﻿using static Puppet.CmdBuilder;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -12,8 +13,28 @@ namespace Puppet.Cli
                 executeAsync: ConfirmAsync,
                 testAsync: ConfirmTestAsync,
                 description: "Asks for your assessment on a number of topics."               
-            )
+            ),
+            Cmd("TestJson")
+                .ExecJson<TestPayload>(TestJsonAsync)
+                .TestJson<TestPayload>(TestTestJsonAsync)            
+            .Build()
         ];
+
+        private Task TestJsonAsync(PuppetContext ctx, TestPayload pl, CancellationToken ct)
+        {
+            ctx.WriteLine("Presumably parsed if you're seeing this:");
+            ctx.WriteLine($"ID = {pl.Id}, Name = {pl.Name}, Date of Birth = {pl.DateOfBirth.ToString("d")}, Favourite color = {pl.FavouriteColor ?? "No answer"}");
+            return Task.CompletedTask;
+        }
+
+        private async Task<bool> TestTestJsonAsync(PuppetContext ctx, TestPayload pl, CancellationToken ct)
+        {
+            if (pl.FavouriteColor is null) return true;
+            if (pl.FavouriteColor.Equals("pink", StringComparison.OrdinalIgnoreCase)) return false;
+            else return true;
+        }
+
+        public sealed record TestPayload(int Id, string Name, DateTime DateOfBirth, string? FavouriteColor);
 
         private async Task ConfirmAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
         {
@@ -35,7 +56,7 @@ namespace Puppet.Cli
             return;
         }
 
-        private async Task <bool> ConfirmTestAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        private async Task<bool> ConfirmTestAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
         {
             bool ok = await ctx.RequestAsync(
                 "Oh uh, you're testing us? Uhm, I guess, what is your favourite colour?",
@@ -49,5 +70,7 @@ namespace Puppet.Cli
             return false;
 
         }
+
+        
     }
 }

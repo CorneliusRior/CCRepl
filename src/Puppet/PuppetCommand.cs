@@ -18,42 +18,49 @@ public class PuppetCommand
     public bool CanTest => TestAsync is not null;
 
 
-    public Func<PuppetContext, string, CancellationToken, Task>? ExecuteJsonAsync { get; init; }
+    public Func<PuppetContext, object, CancellationToken, Task>? ExecuteJsonAsync { get; init; }
     public bool CanExecuteJson => ExecuteJsonAsync is not null;
 
-    public Func<PuppetContext, string, CancellationToken, Task<bool>>? TestJsonAsync { get; init; }
+    public Func<PuppetContext, object, CancellationToken, Task<bool>>? TestJsonAsync { get; init; }
     public bool CanTestJson => TestJsonAsync is not null;
+
+    public Type? JsonPayloadType { get; init; }
 
 
     public string? Usage { get; init; }
     public string? Description { get; init; }
     public IReadOnlyList<string> Examples { get; init; }
     public string? LongDescription { get; init; }
+    public string? Remarks { get; init; } // You can just put whatever you want here, not used.
 
     [SetsRequiredMembers]
     public PuppetCommand(
         string name,
         Func<PuppetContext, IReadOnlyList<string>, CancellationToken, Task>? executeAsync = null,
         Func<PuppetContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? testAsync = null,
-        Func<PuppetContext, object, CancellationToken, Task>? ExecuteJsonAsync = null,
-        Func<PuppetContext, object, CancellationToken, Task<bool>>? TestJsonAsync = null,
+        Func<PuppetContext, object, CancellationToken, Task>? executeJsonAsync = null,
+        Func<PuppetContext, object, CancellationToken, Task<bool>>? testJsonAsync = null,
         IReadOnlyList<string>? aliases = null,
         string? usage = null,
         string? description = null,
         IReadOnlyList<string>? examples = null,
         string? longDescription = null,
+        string? remarks = null,
         IReadOnlyList<PuppetCommand>? children = null
     )
     {
         Name = name;
+        ExecuteAsync = executeAsync;
+        TestAsync = testAsync;
+        ExecuteJsonAsync = executeJsonAsync;
+        TestJsonAsync = testJsonAsync;
         Aliases = aliases ?? Array.Empty<string>();
-        Children = children ?? Array.Empty<PuppetCommand>();
-        ExecuteAsync = executeAsync ?? null;
-        TestAsync = testAsync ?? null;
-        Usage = usage ?? null;
-        Description = description ?? null;
+        Usage = usage;
+        Description = description;
         Examples = examples ?? Array.Empty<string>();
-        LongDescription = longDescription ?? null;
+        LongDescription = longDescription;
+        Remarks = remarks;
+        Children = children ?? Array.Empty<PuppetCommand>();
     }
 
     public string PrintShort(int col1space, int col2space, HelpAttribute help, bool oneline = true)

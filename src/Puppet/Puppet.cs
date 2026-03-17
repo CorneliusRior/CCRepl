@@ -1,4 +1,7 @@
-﻿namespace Puppet;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace Puppet;
 
 /// <summary>
 /// Entry point for the Puppet library.
@@ -13,6 +16,7 @@ public sealed class Puppet
        
     //Other variables:
     public int OneLineMaxWidth { get; set; } = 200;
+    private readonly JsonSerializerOptions _jsonOptions = new();
 
     // Constructor:
     public Puppet(params IPuppetCommandSet[] commandSets)
@@ -54,7 +58,7 @@ public sealed class Puppet
             addresses.AddRange(root.Aliases);            
             foreach (string alias in addresses)
             {
-                AliasIndex.Add(alias, root);
+                if (!AliasIndex.TryAdd(alias, root)) throw new PuppetException($"Duplicate command or alias address: '{alias}' in '{root.Name}' ('{(root.AddressString ?? "Unknown address")}')");
                 foreach (PuppetCommand child in root.Children)
                 {
                     AliasDictionaryAdd(alias, child);
@@ -71,7 +75,7 @@ public sealed class Puppet
         foreach(string alias in addresses)
         {
             string aliasAddress = parentAddress + '.' + alias;
-            AliasIndex.Add(aliasAddress, command);
+            if (!AliasIndex.TryAdd(aliasAddress, command)) throw new PuppetException($"Duplocate command or alias address: `{aliasAddress}` in '{command.Name}' ('{command.AddressString ?? "Unknown address"}')");
             foreach (PuppetCommand child in command.Children)
             {
                 AliasDictionaryAdd(aliasAddress, child);
@@ -131,11 +135,7 @@ public sealed class Puppet
     public async Task ExecuteCommandAsync(string commandHead, IReadOnlyList<string> args, CancellationToken ct = default)
     {
         PuppetCommand cmd = GetCommand(commandHead);
-        if (!cmd.CanExecute)
-        {
-            WriteLine($"Command {commandHead} as no ExecuteAsync method: cannot execute.");
-            return;
-        }
+        if (!cmd.CanExecute) throw new PuppetException($"Command '{commandHead}' has no ExecuteAsync method: cannot execute.");
         PuppetContext ctx = new(this);
         await cmd.ExecuteAsync!(ctx, args, ct);
     }
@@ -213,5 +213,35 @@ public sealed class Puppet
         catch (PuppetUserException ex) { WriteLine($"Input Error, {ex.Location} {ex.Message}"); }
         catch (PuppetException ex) { WriteLine($"Error in {ex.Location} {ex.Message}"); }
         catch (Exception ex) { WriteLine($"Error: {ex.Message}"); }
+    }
+
+    // Json input:
+    public async Task ExecuteJsonAsync(string commandHead, string json, CancellationToken ct = default)
+    {
+        PuppetCommand cmd = GetCommand(commandHead);
+        if (!cmd.CanExecuteJson) throw new PuppetException($"Command '{commandHead}' has no ExecuteJsonAsync method: cannot execute.");
+        if (cmd.JsonPayloadType is null) throw new PuppetException("Null JSON Payload - this command cannot parse JSON.");
+
+        object pl;
+        pl = JsonSerializer.Deserialize(json, cmd.JsonPayloadType, _jsonOptions) ?? throw new PuppetUserException($"Invalid JSON: Cannot parse.");
+        PuppetContext ctx = new(this);
+        await cmd.ExecuteJsonAsync!(ctx, pl, ct);
+    }
+
+    public async Task<bool> TestJsonAsync(string commandHead, string json, CancellationToken ct = default)
+    {
+        PuppetCommand cmd = GetCommand(commandHead);
+        if (!cmd.CanTestJson) throw new PuppetException($"Command '{commandHead}' has no TestJsonAsync method: cannot test.");
+        if (cmd.JsonPayloadType is null) throw new PuppetException("Null JSON Payload - this command cannot parse JSON.");
+
+        object pl;
+        try{ pl = JsonSerializer.Deserialize(json, cmd.JsonPayloadType, _jsonOptions) ?? throw new PuppetUserException($"Invalid JSON: Cannot parse."); }
+        catch (PuppetUserException ex)
+        {
+            WriteLine($"Command '{commandHead}' failed: '{ex.Message}'\n\"{json}\"");
+            return false;
+        }
+        PuppetContext ctx = new(this);
+        return await cmd.TestJsonAsync!(ctx, pl, ct);
     }
 }
