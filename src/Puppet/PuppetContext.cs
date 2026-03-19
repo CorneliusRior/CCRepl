@@ -7,7 +7,12 @@ public sealed class PuppetContext
     {
         _puppet = puppet;
     }
-    public void WriteLine(string message) => _puppet.WriteLine(message);
+    public void WriteLine(string msg = "") => _puppet.WriteLine(msg);
+    public void Write(string msg) => _puppet.Write(msg);
+    public void WriteStatus(string msg) => _puppet.WriteStatus(msg);
+    public void WriteStatusSample(string msg, int length = 150) => _puppet.WriteStatusSample(msg, length);
+    public void ClearStatus(string msg = "") => _puppet.ClearStatus(msg);
+    public Task<T> WithWaiterAsync<T>(Func<CancellationToken, Task<T>> action, WaitAnimation animation = WaitAnimation.Spinner, string prefix = "Loading", string suffix = "", string finish = "Done", int waitTime = 100, CancellationToken ct = default) => _puppet.WithWaiterAsync(action, animation, prefix, suffix, finish, waitTime, ct);
     public Task<string> ReadLineAsync(string prompt) => _puppet.ReadLineAsync(prompt);
 
     

@@ -230,21 +230,23 @@ If two arguments are given, the first argument will be interpreted as a Help Att
     {
         string path = args.StringOrNull(0, "FilePath") ?? await ctx.ReadLineAsync("Please enter filepath:");
         ctx.WriteLine($"Parsing file '{Path.GetFileName(path)}'...");
-        await ctx.ExecuteScriptAsync(FromPath(path), ct);
+        Script script = await ctx.WithWaiterAsync(_ => Task.Run(() => FromPath(path)), WaitAnimation.Spinner, "Parsing Script ", "", "Parsed.", 100, ct);
+        await ctx.ExecuteScriptAsync(script, ct);
     }
 
     private async Task ScriptTestAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
     {
         string path = args.StringOrNull(0, "File Path") ?? await ctx.ReadLineAsync("Please enter filepath:");
         ctx.WriteLine($"Parsing file '{Path.GetFileName(path)}'...");
-        await ctx.TestScriptAsync(FromPath(path), ct);
+        Script script = await ctx.WithWaiterAsync(_ => Task.Run(() => FromPath(path)), WaitAnimation.Spinner, "Parsing Script ", "", "Parsed.", 100, ct);
+        await ctx.TestScriptAsync(script, ct);
     }
 
     private async Task ScriptTestAndRunAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
     {
         string path = args.StringOrNull(0, "File Path") ?? await ctx.ReadLineAsync("Please enter filepath:");
         ctx.WriteLine($"Parsing file '{Path.GetFileName(path)}'...");
-        Script script = FromPath(path);
+        Script script = await ctx.WithWaiterAsync(_ => Task.Run(() => FromPath(path)), WaitAnimation.Spinner, "Parsing Script ", "", "Parsed.", 100, ct);
         if (await ctx.TestScriptAsync(script, ct)) await ctx.ExecuteScriptAsync(script, ct);
     }
 }

@@ -4,6 +4,7 @@ using Puppet.Example;
 
 Puppet.Puppet puppet = new(new SampleCommands(), new CounterCommands());
 puppet.OutputRequested += msg => Console.WriteLine(msg);
+puppet.InlineOutputRequested += msg => Console.Write(msg);
 puppet.InputRequestedAsync = prompt =>
 {
     Console.WriteLine(prompt);

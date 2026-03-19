@@ -46,3 +46,24 @@ public static class HelpAttributeExtensions
 {
     public static bool TryParse(string input, out HelpAttribute output) => Enum.TryParse(input, true, out output);
 }
+
+public enum WaitAnimation
+{
+    Spinner,
+    Elipses,
+    Bounce,
+    Road
+}
+
+public static class WaitAnimationExt
+{
+    public static string[] GetFrames(this WaitAnimation type) =>
+        type switch
+        {
+            WaitAnimation.Spinner   => ["|", "/", "-", "\\"],
+            WaitAnimation.Elipses   => [".", "..", "...", ".."],
+            WaitAnimation.Bounce    => ["[*     ]", "[ *    ]", "[  *   ]", "[   *  ]", "[    * ]", "[     *]", "[    * ]", "[   *  ]", "[  *   ]", "[ *    ]"],
+            WaitAnimation.Road      => ["[*   * ]", "[ *   *]", "[  *   ]", "[   *  ]"],
+            _ => throw new ArgumentOutOfRangeException()
+        };
+}

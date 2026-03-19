@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Security.Cryptography;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Puppet;
@@ -85,7 +86,62 @@ public sealed class Puppet
 
     // IO:
     public event Action<string>? OutputRequested;
-    internal void WriteLine(string msg) => OutputRequested?.Invoke(msg);
+    public event Action<string>? InlineOutputRequested;
+    internal void WriteLine(string msg = "") => OutputRequested?.Invoke(msg);
+    internal void Write(string msg) => InlineOutputRequested?.Invoke(msg);
+
+    private int _lastStatusLength = 0;
+    internal void WriteStatus(string msg)
+    {
+        int padLength = Math.Max(0, _lastStatusLength - msg.Length);
+        string output = "\r" + msg + new string(' ', padLength);
+        _lastStatusLength = msg.Length;
+        Write(output);
+    }
+
+    internal void WriteStatusSample(string msg, int length = 150)
+    {
+        msg = msg.Truncate(length);
+        int padLength = Math.Max(0, length - msg.Length);
+        string output = "\r" + "[ " + msg + new string(' ', padLength) + " ]";
+        _lastStatusLength = output.Length;
+        Write(output);
+    }
+
+    internal void ClearStatus(string msg = "")
+    {
+        if (_lastStatusLength <= 0) return;
+        Write("\r" + new string(' ', _lastStatusLength) + "\r");
+        _lastStatusLength = 0;
+        if (!string.IsNullOrWhiteSpace(msg)) WriteLine(msg);
+    }
+
+    public async Task<T> WithWaiterAsync<T>(Func<CancellationToken, Task<T>> action, WaitAnimation animation = WaitAnimation.Spinner, string prefix = "Loading", string suffix = "", string finish = "Done", int waitTime = 100, CancellationToken ct = default)
+    {
+        using CancellationTokenSource waitCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+
+        Task waitTask = Task.Run(async () =>
+        {
+            string[] frames = animation.GetFrames();
+            int framePadding = frames.Max(f => f.Length);
+            int i = 0;
+            while (!waitCts.Token.IsCancellationRequested)
+            {
+                WriteStatus(prefix + frames[i++ % frames.Length].PadRight(framePadding) + suffix);
+                try { await Task.Delay(waitTime, waitCts.Token); }
+                catch (OperationCanceledException) { break; }
+            }
+        }, waitCts.Token);
+
+        try { return await action(ct); }
+        finally
+        {
+            waitCts.Cancel();
+            ClearStatus(finish);
+            try { await waitTask; }
+            catch (OperationCanceledException) { }
+        }
+    }
 
     public Func<string, Task<string>>? InputRequestedAsync { get; set; }
     internal Task<string> ReadLineAsync(string prompt)

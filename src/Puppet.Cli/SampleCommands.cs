@@ -22,8 +22,53 @@ namespace Puppet.Cli
             Cmd("ToBox").Exec(ToBox)
                 .Children(
                 Cmd("Double").Exec(ToDoubleBox).Build())
-            .Build()
+            .Build(),
+
+            Cmd("TextAnimations").Exec(WaitAnimations).Aliases("ta", "wait").Build(),
+
+            Cmd("ViewFileSample").Exec(ViewFileSample).Build()
         ];
+
+        private async Task ViewFileSample(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            string path = args.String(0, "Path");
+            string[] lines = File.ReadAllLines(path);
+            foreach (string l in lines)
+            {
+                ctx.WriteStatusSample(l, 25);
+                await Task.Delay(25);
+            }
+            ctx.ClearStatus("Done");
+        }
+
+        private async Task WaitAnimations(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            int type = args.IntOr(0, "Type", 0);
+            string pre = args.StringOr(1, "Prefix", "Loading");
+            string suf = args.StringOr(2, "Suffix", "");
+            string fin = args.StringOr(3, "Finish", "");
+            int waitTime = args.IntOr(4, "Wait Time", 100);
+            double seconds = args.DoubleOr(5, "Seconds", 5);
+
+            ctx.WriteLine("Animating:\n");
+
+            WaitAnimation animation = type switch
+            {
+                1 => WaitAnimation.Spinner,
+                2 => WaitAnimation.Elipses,
+                3 => WaitAnimation.Bounce,
+                4 => WaitAnimation.Road,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            await ctx.WithWaiterAsync(
+                async t =>
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(seconds));
+                    return true;
+                },
+                animation, pre, suf, fin, waitTime, ct);
+            
+        }
 
         private Task ToBox(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
         {

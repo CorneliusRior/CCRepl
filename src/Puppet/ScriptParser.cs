@@ -11,7 +11,7 @@ namespace Puppet
 {
     public static class ScriptParser
     {
-        public static Script ParseChars(string input)
+        public async static Task<Script> ParseChars(string input)
         {
             bool inBlockComment = false;
             bool inLineComment = false;
@@ -93,7 +93,7 @@ namespace Puppet
                 while (braceDepth > 0)
                 {
                     i++;
-                    if (i >= charLength) throw new ScriptException($"No closing bracket ('}}') found for statement #{statementIndex} (Startline {startLine}.");
+                    if (i >= charLength) throw new ScriptException($"No closing bracket ('}}') found for statement #{statementIndex} '{commandHead}' (Startline {startLine}).");
                     char ch = input[i];
                     sb.Append(ch);
                     if (ch == '\n') lineIndex++;
@@ -113,7 +113,7 @@ namespace Puppet
                         }
                         if (ch == '"')
                         {
-                            escaped = true;
+                            inString = false;
                             continue;
                         }
                         continue;
@@ -209,14 +209,14 @@ namespace Puppet
             Debug.WriteLine(file + $"(Line {line})" + name + "(): " + msg);
         }
 
-        public static Script FromPath(string path)
+        public async static Task<Script> FromPath(string path)
         {
             /*
             string[] lines = File.ReadAllLines(path);
             return ParseLines(lines);
             */
             string chars = File.ReadAllText(path);
-            return ParseChars(chars);
+            return await ParseChars(chars);
         }
 
         private static bool TryParseJson(this string json)

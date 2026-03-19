@@ -108,4 +108,4 @@ public static class StringHelpers
         sb.AppendLine('╚' + vert + '╝');
         return sb.ToString();
     }
-}                 
+}
