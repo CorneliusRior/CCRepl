@@ -2,11 +2,13 @@
 
 The `PuppetCommand` class is the building block of a Puppet command system. Commands are defined inside command sets implementing `IPuppetCommandSet`, and privided to `Puppet` during construction.
 
-The `PuppetCommand` constructor has only one required property, `Name`. When `Puppet` is built, each assigned command is automatically given an address `AddressString`, structured lke `parent.command.child`, which we call the "Command Head". The command can then be called by inputting the command head, followed by arguments seperated by spaces, stored in an IReadOnlyList\<string\> `args`.
+The `PuppetCommand` has only one required property, `Name`. When `Puppet` is built, each assigned command is automatically given an address `AddressString`, structured lke `parent.command.child`, which we call the "Command Head". The command can then be called by inputting the command head, followed by arguments seperated by spaces, stored in an IReadOnlyList\<string\> `args`.
+
+A `PuppetCommand` can be defined using either the class constructor, or `CommandBuilder`. To define a command which can take JSON input, use `CommandBuilder`.
 
 ## Properties:
 
-- `Name`:Canonical name of the command. The only required property. AddressString is assigned based on this parameter. Name must be unique in its respective level and have no siblings with identical names. 
+- `Name`: Canonical name of the command. The only required property. AddressString is assigned based on this parameter. Name must be unique in its respective level and have no siblings with identical names. 
 - `AddressString`:
 String by which this command is called. Consists of the root command's name followed by descendent names seperated by '.' (e.g. `Help.List`).
 - `Aliases`: A list of aliases which can be used instead of `Name`. Canonical name takes priority in all searches. Every alias must be unique in its respective level and have no siblings with identical aliases.
@@ -15,6 +17,11 @@ String by which this command is called. Consists of the root command's name foll
 - `CanExecute`: Returns true if `ExecuteAsync` is not null.
 - `TestAsync`: Testing method of the command. Methods must return `Task<bool>` and accept the same arguments as `ExecuteAsync`: They do not need to be `async`. These should be constructed to parse arguments identically `ExecuteAsync`, and further validation can be made too.
 - `CanTest`: Returns true if `TestAsync` is not null.
+- `ExecuteJsonAsync`: Execution method which takes JSON formatting of inputs. These should not require additional input once executed, but should otherwise be identical to `ExecuteAsync` if defined. Scripts run using `ExecuteJsonAsync`. `ExecuteJsonAsync` can only be defined using `CommandBuilder`.
+- `CanExecuteJson`: Returns true if `ExecuteJsonAsync` is not null.
+- `TestJsonAsync`: Testing method for `ExecuteJsonAsync`. Due to the nature of JSON formatting, input validation is done prior, so it is not necessary to define `TestJsonAsync` unless further logic is necessary. By default, each statement in a script must be tested and return true before it runs.
+- `CanTestJson`: Returns true it `TestJsonAsync` is not null.
+- `JsonPayloadType`: Definition of payload object, record used to parse JSON arguments. Should follow format of ExecuteAsync if defined.
 - `Usage`: String showing how the command is used. Format as "Command.Head \<type RequiredArgument\> [type OptionalArgument]".
 - `Description`: String describing what this command does. This is the default "Help" parameter shown when the `help` command is called.
 - `Examples`: Examples showing how to use the command.
@@ -30,6 +37,8 @@ Puppet internal systems are generally case insensitive, so names and aliases can
 ## Implementation:
 Create an implementation of `IPuppetCommand`, and add new command(s) to the list `Commands`. You can create placeholder commands with just `Name`, these will be registered in `Puppet` and will be listed in `help` and `commands` commands, but will have no functionality.
 
+This can be done with the constructor defined in the `PuppetCommand` class:
+
 ```csharp
 public class MyCommands : IPuppetCommandSet
 {
@@ -40,6 +49,23 @@ public class MyCommands : IPuppetCommandSet
 			[
 				new(name: "MySubCommand")
 			];
+		)
+	];
+}
+```
+
+or by using CommandBuilder:
+
+```csharp
+using static CmdBuilder;
+
+public class MyCommands : IPuppetCommandSet
+{
+	public IReadOnlyLIst<PuppetCommand> Commands =>
+	[
+		Cmd("MyCommand").Children(
+			Cmd("MySubCommand").Build()
+		).Build()
 	];
 }
 ```
@@ -82,6 +108,40 @@ public class MyCommands : IPuppetCommandSet
 	}
 }
 ```
+
+With `CommandBuilder`, this command would be defined like:
+
+```csharp
+Cmd("MyCommand")
+	.Exec(MyCommandAsync).Test(MyCommandTest.Async)
+	.Usage("MyCommand <int MyInt> <string MyString> [bool MyBool] [double? MyDouble]")
+.Build()
+```
+
+### JSON Formatting:
+Commands can accept arguments in JSON format by defining `ExecuteJsonAsync`. This must be done using `CommandBuilder`. JSON formatting is used for scripting.
+
+```csharp
+using static CmdBuilder;
+
+pblic class MyCommands : IPuppetCommandSet
+{
+	public IReadOnlyList<PuppetCommand> Commands =>
+	[
+		Cmd("MyCommand").ExecJson<MyCommandPayload>(MyCommandJsonAsync).Build()
+	];
+
+	private Task MyCommandJsonAsync(PuppetContext ctx, MyCommandPayload pl, CancellationToken ct)
+	{
+		// ...
+	}
+
+	private sealed record MyCommandPayload(string MyString, int MyInt, Bool MyBool, double? MyDouble);
+}
+```
+
+This code has the same functionality as the previous code block showing the definitions of `ExecuteAsync` and `TestAsync` - there is no need for input validation, as it is validated on input. `TestJsonAsync` can be added if further validation or testing is needed, but this should be reserved for exceptional cases.
+
 ### Prompts:
 Continuous input can be given using an `async` execution method and `PuppetContext` methods. Useful methods include:
 
@@ -110,3 +170,4 @@ private async Task MyPromptAsync(PuppetContext cts, IReadOnlyList<string> args, 
 		0, "Default", "Fallback", "Zero")
 }
 ```
+

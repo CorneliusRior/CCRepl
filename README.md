@@ -1,5 +1,5 @@
 # Puppet
-Puppet is a  C# class library for building REPL-style command systems. Commands are registered as a hierarchical tree, and can be executed via string input, or directly within commands.
+Puppet is a  C# class library for building REPL-style command systems. Commands are registered as a hierarchical tree, and can be executed via external string input, directly within the program, or by running scripts.
 
 ## Overview
 Puppet is designed to quickly and easily create interactive command environments, scripts, and automation tools.
@@ -13,9 +13,11 @@ Commands are added by defining `PuppetCommand` objects inside command sets imple
 - Hierarchical command structure (`command.subcommand`, `help.list`, &c.).
 - Command aliases.
 - Asynchronous command execution.
+- Options for JSON formatting of command arguments.
 - Test methods for validating command inputs without executing them.
 - Built-in input/output abstraction.
 - Easy argument parsing and user input exceptions.
+- Automatic command execution using scripts.
 
 ## Usage
 
@@ -37,6 +39,7 @@ Puppet puppet = new(
 
 // Assign input & output handlers:
 puppet.OutputRequested += msg => Console.WriteLine(msg);
+puppet.InlineOutputRequested += msg => Console.Write(msg);
 puppet.InputRequestedAsync = prompt =>
 {
 	Console.WriteLine(prompt);
@@ -81,8 +84,3 @@ See `PuppetCommand` documentation for more details.
 
 ## Project status
 Personal project for use in other projects, still evolving. API may change as features are refined.
-
-## Planned features
-- Run commands with Json formatting
-
-- Import, parse, test and run scripts.
