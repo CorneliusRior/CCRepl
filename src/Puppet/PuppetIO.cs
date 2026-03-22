@@ -10,10 +10,12 @@ public sealed partial class Puppet
     public event Action<string>? OutputRequested;
     public event Action<string>? InlineOutputRequested;
     public Func<string, Task<string>>? InputRequestedAsync { get; set; }
-    internal Task<string> ReadLineAsync(string prompt)
+    public Func<string, CancellationToken, Task<string>>? InputRequestedCancelableAsync { get; set; }
+    internal async Task<string> ReadLineAsync(string prompt, CancellationToken ct)
     {
-        if (InputRequestedAsync is null) throw new InvalidOperationException("Input requested callback is not set");
-        return InputRequestedAsync(prompt);
+        if (InputRequestedCancelableAsync is not null) return await InputRequestedCancelableAsync(prompt, ct);
+        if (InputRequestedAsync is not null) return await InputRequestedAsync(prompt);
+        throw new InvalidOperationException("Input requested callback is not set");        
     }
     
     /// <summary>
@@ -60,7 +62,7 @@ public sealed partial class Puppet
         if (_lastStatusLength <= 0) return;
         Write("\r" + new string(' ', _lastStatusLength) + "\r");
         _lastStatusLength = 0;
-        if (!string.IsNullOrWhiteSpace(msg)) WriteLine(msg);
+        if (!string.IsNullOrWhiteSpace(msg)) WriteLine(msg + "\n");
     }
 
     /// <summary>

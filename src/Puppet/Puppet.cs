@@ -49,6 +49,7 @@ public sealed partial class Puppet
             IReadOnlyList<string> args = tokens.Skip(1).ToList();
             await ExecuteCommandAsync(commandHead, args, ct);
         }
+        catch (OperationCanceledException) { WriteLine($"Cancelled."); }
         catch (PuppetUserException ex) { WriteLine($"Input Error, {ex.Location} {ex.Message}"); }
         catch (PuppetException ex) { WriteLine($"Error in {ex.Location} {ex.Message}"); }
         catch (Exception ex) { WriteLine($"Error: {ex.Message}"); }

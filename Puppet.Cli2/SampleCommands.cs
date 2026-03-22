@@ -5,7 +5,7 @@ using System.Text;
 using Puppet.Models;
 using Puppet.Tools;
 
-namespace Puppet.Cli
+namespace Puppet.Cli2
 {
     internal class SampleCommands : IPuppetCommandSet
     {
@@ -65,7 +65,7 @@ namespace Puppet.Cli
             await ctx.WithWaiterAsync(
                 async t =>
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(seconds));
+                    await Task.Delay(TimeSpan.FromSeconds(seconds), ct);
                 },
                 pre, suf, fin, waitTime, ct, animation);
             

@@ -216,14 +216,14 @@ If two arguments are given, the first argument will be interpreted as a Help Att
     private async Task RunJson(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
     {
         string commandHead = args.String(0, "CommandHead");
-        string json = await ctx.ReadLineAsync("Please enter Json argument:");
+        string json = await ctx.ReadLineAsync("Please enter Json argument:", ct);
         await ctx.ExecuteJsonAsync(commandHead, json);
     }
 
     private async Task TestJson(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
     {
         string commandHead = args[0];
-        string json = await ctx.ReadLineAsync("Please enter Json argument:");
+        string json = await ctx.ReadLineAsync("Please enter Json argument:", ct);
         bool success = await ctx.TestJsonAsync(commandHead, json, ct);
         if (success) ctx.WriteLine($"No issues found: '{string.Join(' ', args)}'.");
         else ctx.WriteLine($"Failed test: '{string.Join(' ', args)}'.");
@@ -231,7 +231,7 @@ If two arguments are given, the first argument will be interpreted as a Help Att
 
     private async Task ScriptRunAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
     {
-        string path = args.StringOrNull(0, "FilePath") ?? await ctx.ReadLineAsync("Please enter filepath:");
+        string path = args.StringOrNull(0, "FilePath") ?? await ctx.ReadLineAsync("Please enter filepath:", ct);
         ctx.WriteLine($"Parsing file '{Path.GetFileName(path)}'...");
         Script script = await ctx.WithWaiterAsync(_ => Task.Run(() => FromPath(path)), "Parsing Script ", "", "Parsed.", 100, ct, WaitAnimation.Spinner);
         await ctx.ExecuteScriptAsync(script, ct);
@@ -239,7 +239,7 @@ If two arguments are given, the first argument will be interpreted as a Help Att
 
     private async Task ScriptTestAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
     {
-        string path = args.StringOrNull(0, "File Path") ?? await ctx.ReadLineAsync("Please enter filepath:");
+        string path = args.StringOrNull(0, "File Path") ?? await ctx.ReadLineAsync("Please enter filepath:", ct);
         ctx.WriteLine($"Parsing file '{Path.GetFileName(path)}'...");
         Script script = await ctx.WithWaiterAsync(_ => Task.Run(() => FromPath(path)), "Parsing Script ", "", "Parsed.", 100, ct, WaitAnimation.Spinner);
         await ctx.TestScriptAsync(script, ct);
@@ -247,7 +247,7 @@ If two arguments are given, the first argument will be interpreted as a Help Att
 
     private async Task ScriptTestAndRunAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
     {
-        string path = args.StringOrNull(0, "File Path") ?? await ctx.ReadLineAsync("Please enter filepath:");
+        string path = args.StringOrNull(0, "File Path") ?? await ctx.ReadLineAsync("Please enter filepath:", ct);
         ctx.WriteLine($"Parsing file '{Path.GetFileName(path)}'...");
         Script script = await ctx.WithWaiterAsync(_ => Task.Run(() => FromPath(path)), "Parsing Script ", "", "Parsed.", 100, ct, WaitAnimation.Spinner);
         if (await ctx.TestScriptAsync(script, ct)) await ctx.ExecuteScriptAsync(script, ct);

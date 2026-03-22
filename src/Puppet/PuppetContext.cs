@@ -20,7 +20,7 @@ public sealed class PuppetContext
     public int OneLineMaxWidth => _puppet.OneLineMaxWidth;
 
     // IO:
-    public Task<string> ReadLineAsync(string prompt) => _puppet.ReadLineAsync(prompt);
+    public Task<string> ReadLineAsync(string prompt, CancellationToken ct) => _puppet.ReadLineAsync(prompt, ct);
     public void WriteLine(string msg = "") => _puppet.WriteLine(msg);
     public void Write(string msg) => _puppet.Write(msg);
     public void WriteStatus(string msg) => _puppet.WriteStatus(msg);

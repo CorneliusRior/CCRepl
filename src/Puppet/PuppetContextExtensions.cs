@@ -22,9 +22,9 @@ namespace Puppet
         /// <param name="fallBack"></param>
         /// <returns></returns>
         /// <exception cref="PuppetUserException"></exception>
-        public static async Task<T> RequestAsync<T>(this PuppetContext ctx, string prompt, Func<string, (bool success, T Value)> parser, T? fallBack = default)
+        public static async Task<T> RequestAsync<T>(this PuppetContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T Value)> parser, T? fallBack = default)
         {
-            string input = await ctx.ReadLineAsync(prompt);
+            string input = await ctx.ReadLineAsync(prompt, ct);
             var result = parser(input);
             if (result.success) return result.Value;
             if (fallBack is not null) return fallBack;
@@ -55,9 +55,9 @@ namespace Puppet
         /// <param name="defaultStrings"></param>
         /// <returns></returns>
         /// <exception cref="PuppetUserException"></exception>
-        public static async Task<T> RequestAsync<T>(this PuppetContext ctx, string prompt, Func<string, (bool success, T Value)> parser, T fallBack, params string[] defaultStrings)
+        public static async Task<T> RequestAsync<T>(this PuppetContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T Value)> parser, T fallBack, params string[] defaultStrings)
         {
-            string input = await ctx.ReadLineAsync(prompt);
+            string input = await ctx.ReadLineAsync(prompt, ct);
             if (defaultStrings.Any(s => string.Equals(s, input, StringComparison.OrdinalIgnoreCase))) return fallBack;
             var result = parser(input);
             if (result.success) return result.Value;
@@ -85,11 +85,11 @@ namespace Puppet
         /// <param name="retryPrompt"></param>
         /// <param name="parser"></param>
         /// <returns></returns>
-        public static async Task<T> RequireAsync<T>( this PuppetContext ctx, string prompt, Func<string, (bool success, T Value)> parser, string retryPrompt)
+        public static async Task<T> RequireAsync<T>( this PuppetContext ctx, CancellationToken ct,  string prompt, Func<string, (bool success, T Value)> parser, string retryPrompt)
         {
             while (true)
             {
-                try { return await ctx.RequestAsync(prompt, parser); }
+                try { return await ctx.RequestAsync(ct, prompt, parser); }
                 catch (PuppetUserException) { ctx.WriteLine(retryPrompt); }
             }
         }
@@ -120,13 +120,13 @@ namespace Puppet
         /// <param name="fallBack"></param>
         /// <param name="defaultStrings"></param>
         /// <returns></returns>
-        public static async Task<T> RequireAsync<T>(this PuppetContext ctx, string prompt, Func<string, (bool success, T Value)> parser, string retryPrompt, T fallBack, params string[] defaultStrings
+        public static async Task<T> RequireAsync<T>(this PuppetContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T Value)> parser, string retryPrompt, T fallBack, params string[] defaultStrings
             )
         {
             if (defaultStrings.Length == 0) defaultStrings = [" ", "default", "fallback"];
             while (true)
             {
-                try { return await ctx.RequestAsync(prompt, parser, fallBack, defaultStrings); }
+                try { return await ctx.RequestAsync(ct, prompt, parser, fallBack, defaultStrings); }
                 catch (PuppetUserException) { ctx.WriteLine(retryPrompt); }
             }
         }
@@ -138,11 +138,11 @@ namespace Puppet
         /// <param name="prompt">What user is presented with.</param>
         /// <param name="retryPrompt">What user is presented with if input is null or white space.</param>
         /// <returns></returns>
-        public static async Task<string> RequireString(this PuppetContext ctx, string prompt, string retryPrompt)
+        public static async Task<string> RequireString(this PuppetContext ctx, CancellationToken ct, string prompt, string retryPrompt)
         {
             while (true)
             {
-                string? input = await ctx.ReadLineAsync(prompt);
+                string? input = await ctx.ReadLineAsync(prompt, ct);
                 if (!string.IsNullOrWhiteSpace(input)) return input;
                 else ctx.WriteLine(retryPrompt);
             }
@@ -154,9 +154,9 @@ namespace Puppet
         /// <param name="ctx"></param>
         /// <param name="prompt">What user is presented with.</param>
         /// <returns></returns>
-        public static async Task<string?> RequestStringNullable(this PuppetContext ctx, string prompt)
+        public static async Task<string?> RequestStringNullable(this PuppetContext ctx, CancellationToken ct, string prompt)
         {
-            string? input = await ctx.ReadLineAsync(prompt);
+            string? input = await ctx.ReadLineAsync(prompt, ct);
             if (string.IsNullOrWhiteSpace(input)) return null;
             else return input;
         }
@@ -178,13 +178,14 @@ namespace Puppet
             return filtered;
         }
 
-        public static async Task<bool> ConfirmAsync(this PuppetContext ctx, string prompt = $"(Y/N):", bool? fallBack = null) => (await ctx.ReadLineAsync(prompt)).ParseConfirmation(fallBack);
+        public static async Task<bool> ConfirmAsync(this PuppetContext ctx, CancellationToken ct, string prompt = $"(Y/N):", bool? fallBack = null) => (await ctx.ReadLineAsync(prompt, ct)).ParseConfirmation(fallBack);
 
-        public static async Task<bool> ConfirmRequireAsync(this PuppetContext ctx, string prompt = $"(Y/N)", string retryPrompt = "Could not parse, try again.")
+        public static async Task<bool> ConfirmRequireAsync(this PuppetContext ctx, CancellationToken ct, string prompt = $"(Y/N)", string retryPrompt = "Could not parse, try again.")
         {
             while (true)
             {
-                try { return await ctx.ConfirmAsync(prompt); }
+                try { return await ctx.ConfirmAsync(ct, prompt); }
+                catch (OperationCanceledException) { throw; }
                 catch { ctx.WriteLine(retryPrompt); }
             }
         }
