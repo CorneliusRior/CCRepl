@@ -1,11 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Puppet.Tools
 {
+    public static class InputHelpers
+    {
+        public static Task ConsoleCancelKeyWatcher(CancellationTokenSource cts, ConsoleKey cancelKey = ConsoleKey.Escape, int pollDelayMs = 25) =>
+            Task.Run(async () =>
+            {
+                while (!cts.IsCancellationRequested)
+                {
+                    if (!Console.KeyAvailable)
+                    {
+                        await Task.Delay(pollDelayMs, cts.Token);
+                        continue;
+                    }
+
+                    ConsoleKeyInfo key = Console.ReadKey(intercept: true);
+                    if (key.Key == cancelKey)
+                    {
+                        cts.Cancel();
+                        break;
+                    }
+                }
+            });
+    }
+
     public sealed class ConsoleInputEditor
     {
         private readonly string _prompt;
@@ -57,7 +81,7 @@ namespace Puppet.Tools
             _previous = 0;
         }
 
-        public async Task<ConsoleInput> ReadLineAsync(CancellationToken ct = default)
+        public async Task<ConsoleResult> ReadLineAsync(CancellationToken ct = default)
         {
             _sb.Clear();
             _caret = 0;
@@ -88,7 +112,7 @@ namespace Puppet.Tools
                         }
                         ClearRenderedLine();
                         Console.WriteLine();
-                        return ConsoleInput.Cancel();
+                        return ConsoleResult.Cancel();
                     case ConsoleKey.Enter:
                         if (key.Modifiers.HasFlag(ConsoleModifiers.Control) || key.Modifiers.HasFlag(ConsoleModifiers.Shift))
                         {
@@ -100,7 +124,7 @@ namespace Puppet.Tools
                         ClearRenderedLine();
                         //Console.WriteLine();
                         if (!string.IsNullOrWhiteSpace(submit)) AddToHistory(submit);
-                        return ConsoleInput.Submit(submit.Replace('¶', '\n'));
+                        return ConsoleResult.Submit(submit.Replace('¶', '\n'));
                     case ConsoleKey.Backspace:
                         if (_caret > 0)
                         {
@@ -323,9 +347,9 @@ namespace Puppet.Tools
         }
     }
 
-    public sealed record ConsoleInput(bool Cancelled, string Text)
+    public sealed record ConsoleResult(bool Cancelled, string Text)
     {
-        public static ConsoleInput Submit(string text) => new(false, text);
-        public static ConsoleInput Cancel() => new(true, "");
+        public static ConsoleResult Submit(string text) => new(false, text);
+        public static ConsoleResult Cancel() => new(true, "");
     }
 }

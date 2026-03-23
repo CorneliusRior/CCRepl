@@ -14,7 +14,7 @@ puppet.InputRequestedCancelableAsync = async (prompt, ct) =>
 {
     Console.WriteLine(prompt);
     ConsoleInputEditor editor = new("> ", history);
-    ConsoleInput result = await editor.ReadLineAsync(ct);
+    ConsoleResult result = await editor.ReadLineAsync(ct);
     if (result.Cancelled) throw new OperationCanceledException(ct);
     return result.Text;
 };
@@ -25,7 +25,7 @@ bool exit = false;
 while (!exit)
 {
     ConsoleInputEditor editor = new("> ", history);
-    ConsoleInput result = await editor.ReadLineAsync();
+    ConsoleResult result = await editor.ReadLineAsync();
     if (result.Cancelled)
     {
         exit = true;
@@ -45,24 +45,7 @@ while (!exit)
     }
 
     using CancellationTokenSource cts = new();
-    Task keyWatcher = Task.Run(async () =>
-    {
-        while (!cts.IsCancellationRequested)
-        {
-            if (!Console.KeyAvailable)
-            {
-                await Task.Delay(25);
-                continue;
-            }
-
-            ConsoleKeyInfo k = Console.ReadKey(intercept: true);
-            if (k.Key == ConsoleKey.Escape)
-            {
-                cts.Cancel();
-                break;
-            }
-        }
-    });
+    Task keyWatcher = InputHelpers.ConsoleCancelKeyWatcher(cts);
 
     try { await puppet.ExecuteAsync(input, cts.Token); }
     catch (OperationCanceledException) { Console.WriteLine("Cancelled."); }
