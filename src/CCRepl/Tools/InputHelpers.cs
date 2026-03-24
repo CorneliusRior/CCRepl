@@ -148,12 +148,12 @@ namespace CCRepl.Tools
                                     else wl++;
                                 }
 
-                                // Remove any remaining spaces:
+                                /* Remove any remaining spaces:
                                 for (int i = _caret - wl - 1; i >= 0; i--)
                                 {
                                     if (_sb[i] == ' ') wl++;
                                     else break;
-                                }
+                                } */ // Got rid of this, put it back if you like. 
 
                                 _sb.Remove(_caret - wl, wl);
                                 _caret -= wl;
