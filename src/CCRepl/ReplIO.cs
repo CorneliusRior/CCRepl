@@ -7,14 +7,14 @@ namespace CCRepl;
 
 public sealed partial class Repl
 {
-    public event Action<string>? OutputRequested;
-    public event Action<string>? InlineOutputRequested;
-    public Func<string, Task<string>>? InputRequestedAsync { get; set; }
-    public Func<string, CancellationToken, Task<string>>? InputRequestedCancelableAsync { get; set; }
+    public event Action<string>? ReqWriteLine;
+    public event Action<string>? ReqWrite;
+    //public Func<string, Task<string>>? ReqInputAsync { get; set; }
+    public Func<string, CancellationToken, Task<string>>? ReqInputAsync { get; set; }
     internal async Task<string> ReadLineAsync(string prompt, CancellationToken ct)
     {
-        if (InputRequestedCancelableAsync is not null) return await InputRequestedCancelableAsync(prompt, ct);
-        if (InputRequestedAsync is not null) return await InputRequestedAsync(prompt);
+        if (ReqInputAsync is not null) return await ReqInputAsync(prompt, ct);
+        //if (ReqInputAsync is not null) return await ReqInputAsync(prompt);
         throw new InvalidOperationException("Input requested callback is not set");        
     }
     
@@ -22,13 +22,13 @@ public sealed partial class Repl
     /// Writes a new line in output. Invokes OutputRequested.
     /// </summary>
     /// <param name="msg">Message to print.</param>
-    internal void WriteLine(string msg = "") => OutputRequested?.Invoke(msg);
+    internal void WriteLine(string msg = "") => ReqWriteLine?.Invoke(msg);
 
     /// <summary>
     /// Writes in output without new line. Invokes InlineOutputRequested.
     /// </summary>
     /// <param name="msg">Message to print.</param>
-    internal void Write(string msg) => InlineOutputRequested?.Invoke(msg);
+    internal void Write(string msg) => ReqWrite?.Invoke(msg);
 
     private int _lastStatusLength = 0;
 

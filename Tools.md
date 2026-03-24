@@ -149,6 +149,77 @@ Current list of extractor methods are:
 - `dateTimeOr()` Returns specified DateTime, or default if not present.
 - `dateTimeOrNull()` Returns specified DateTime, or null if not present.
 
+## ConsoleInputEditor
+
+`ConsoleInputEditor` is a sealed class which contains the method `ReadLineAsync`, which is only to be used in Console Applications. This intercepts and handles keystrokes, enabling command cancellation with a keystroke, and multi-line commands (marked in the buffer as '¶') with 'Ctrl + Enter'. It also retains command history which can be accessed with the up and down arrow keys. It returns `ConsoleResult` with property `Cancelled`.
+
+If you are using a custom REPL set up (e.g. using WPF or WinForms), this won't work and isn't necessary.
+
+### Implementation
+
+When defining `ReqInputAsync` handler and main input loop, declare a new `ConsoleInputEditor` with the `prompt` string (`prompt` can be any string, or even blank. `history` is optional: a blank array is created by default). Define a `ConsoleResult` with `ConsoleInputEditor.ReadLineAsync()`, and handle. Cancellation by keystroke can be enabled with `ConsoleCancelKeyWatcher` (see InputHelpers).
+
+```csharp
+using CCRepl;
+using CCRepl.Tools;
+
+Repl repl = new(...);
+repl.ReqWriteLine += msg => Console.WriteLine(msg);
+repl.ReqWrite += msg => Console.Write(msg);
+
+List<string> history = [];
+
+repl.ReqInputAsync = async (prompt, ct) =>
+{
+    Console.WriteLine(prompt);
+    ConsoleInputEditor editor = new("> ", history);
+    ConsoleResult result = await editor.ReadLineAsync(ct);
+    if (result.Cancelled) throw new OperationCanceledException(ct);
+    return result.Text;
+};
+
+bool exit = false;
+while (!exit)
+{
+	ConsoleInputEditor editor = new("> ", history);
+	ConsoleResult result = await editor.ReadLineAsync();
+    if (result.Cancelled)
+    {
+        exit = true;
+        continue;
+    }
+    string input = result.Text;
+    if (string.IsNullOrWhiteSpace(input)) continue;
+    if (input.Equals("exit", StringComparison.OrdinalIgnoreCase))
+    {
+        exit = true;
+        continue;
+    }
+    if (input.Equals("clear", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Clear();
+        continue;
+    }
+
+    using CancellationTokenSource cts = new();
+    Task keyWatcher = InputHelpers.ConsoleCancelKeyWatcher(cts);
+
+    try { await repl.ExecuteAsync(input, cts.Token); }
+    catch (OperationCanceledException) { Console.WriteLine("Cancelled."); }
+    finally
+    {
+        cts.Cancel();
+        try { await keyWatcher; }
+        catch (OperationCanceledException) { }
+    }
+}
+}
+```
+
+## InputHelpers
+
+`InputHelpers` is a static class which contains `ConsoleCancelKeyWatcher`, which is only to be used in Console Applications which implement `ConsoleInputEditor`, enabling command cancellation with a keystroke ('Escape' by default).
+
 ## StringHelpers
 
 `Stringhelpers` is a static class of methods used to help handle strings for printing. Current methods are:

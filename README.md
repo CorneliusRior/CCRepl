@@ -11,12 +11,14 @@ Commands are added by defining `ReplCommand` objects inside command sets impleme
 
 ## Features
 - Hierarchical command structure (`command.subcommand`, `help.list`, &c.).
+- Easy argument parsing and user input exceptions.
 - Command aliases.
 - Asynchronous command execution.
+- Execution cancellation.
+- Optional console function override to enable cancellation by keystroke.
 - Options for JSON formatting of command arguments.
 - Test methods for validating command inputs without executing them.
 - Built-in input/output abstraction.
-- Easy argument parsing and user input exceptions.
 - Automatic command execution using scripts.
 
 ## Usage
@@ -25,12 +27,15 @@ Commands are added by defining `ReplCommand` objects inside command sets impleme
 To set up a CCRepl command system:
 
 1. Create the `Repl` object, assigning command sets as constructor parameters (these can be left blank initially). 
-2. Assign input & output handlers. 
-3. Create input method.
+1. Assign `ReqWriteLine` and `ReqWrite`.
+2. Assign `ReqInputAsync` handler.
+3. Create input loop.
 
 Here is an example for a simple console app:
 
 ```csharp
+using CCRepl;
+
 // Define Repl object, assign commandsets:
 Repl repl = new(
 	new MyCommands(),
@@ -38,9 +43,9 @@ Repl repl = new(
 );
 
 // Assign input & output handlers:
-repl.OutputRequested += msg => Console.WriteLine(msg);
-repl.InlineOutputRequested += msg => Console.Write(msg);
-repl.InputRequestedAsync = prompt =>
+repl.ReqWriteLine += msg => Console.WriteLine(msg);
+repl.ReqWrite += msg => Console.Write(msg);
+repl.ReqInputAsync = (prompt, ct) =>
 {
 	Console.WriteLine(prompt);
 	Console.Write("> ");
@@ -56,6 +61,61 @@ while (true)
 	await repl.ExecuteAsync(line);
 }
 ``` 
+
+Here is an example for a console app implementing `ConsoleInputEditor`, enabling command cancellation by pressing "Escape":
+
+```csharp
+using CCRepl;
+using CCRepl.Tools;
+
+Repl repl = new(...);
+repl.ReqWriteLine += mgs => Console.WriteLine(msg);
+repl.ReqWrite += msg => Console.Write(msg);
+
+List<string> history = [];
+
+repl.ReqInputAsync = async (prompt, ct) =>
+{
+	Console.WriteLine(prompt);
+	ConsoleInputEditor editor = new("> ", history);
+	ConsoleResult result = await editor.ReadLineAsync(ct);
+	if (result.Cancelled) throw new OperationCanceledException(ct);
+	return result.Text;
+}
+
+bool exit = false;
+
+while (!exit)
+{
+	ConsoleInputEditor editor = new("> ", history);
+	ConsoleResult result = await editor.ReadLineAsync();
+	if (result.Cancelled)
+	{
+		exit = true;
+		continue;
+	}
+
+	string input = result.Text;
+	if (string.IsNullOrWhiteSpace(input)) continue;
+	if (input.Equals("exit", StringComparison.OrdinalIgnoreCase))
+	{
+		exit = true;
+		continue;
+	}
+
+	using CancellationTokenSource cts = new();
+	Task keyWatcher = InputHelpers.ConsoleCancelKeyWatcher(cts, ConsoleKey.Escape);
+
+	try { await repl.ExecuteAsync(input, cts.Token); }
+    catch (OperationCanceledException) { Console.WriteLine("Cancelled."); }
+    finally
+    {
+        cts.Cancel();
+        try { await keyWatcher; }
+        catch (OperationCanceledException) { }
+    }
+}
+```
 
 ### Command definition
 

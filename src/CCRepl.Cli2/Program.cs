@@ -6,12 +6,12 @@ using System.Text;
 using System.Threading;
 
 Repl repl = new(new SampleCommands());
-repl.OutputRequested += msg => Console.WriteLine(msg);
-repl.InlineOutputRequested += msg => Console.Write(msg);
+repl.ReqWriteLine += msg => Console.WriteLine(msg);
+repl.ReqWrite += msg => Console.Write(msg);
 
 List<string> history = [];
 
-repl.InputRequestedCancelableAsync = async (prompt, ct) =>
+repl.ReqInputAsync = async (prompt, ct) =>
 {
     Console.WriteLine(prompt);
     ConsoleInputEditor editor = new("> ", history);
@@ -20,7 +20,7 @@ repl.InputRequestedCancelableAsync = async (prompt, ct) =>
     return result.Text;
 };
 
-Console.WriteLine("Puppet CLI 2. Type 'exit' to quit");
+Console.WriteLine("CCRepl CLI 2. Type 'exit' to quit");
 bool exit = false;
 
 while (!exit)

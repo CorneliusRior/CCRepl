@@ -4,7 +4,7 @@ using System.Text;
 namespace CCRepl.Tools;
 
 /// <summary>
-/// Methods for helping handle arguments in PuppetCommands (Human Input). Contains:
+/// Methods for helping handle arguments in ReplCommands (Human Input). Contains:
 ///  - Tokenize
 ///  - Argument extractors
 /// </summary>

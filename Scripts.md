@@ -52,5 +52,5 @@ More parameters may be added to this in future.
 
 ## Planned features
 
- - Be able to pass scripts to puppet externally.
+ - Be able to pass scripts to CCRepl externally.
  - Make CCRepl scripts its own FileType (.ccr?) which can be opened by a program running CCRepl by default.
