@@ -1,11 +1,11 @@
-﻿using Puppet;
-using Puppet.Cli;
-using Puppet.Example;
+﻿using CCRepl;
+using CCRepl.Cli;
+using CCRepl.Example;
 
-Puppet.Puppet puppet = new(new SampleCommands(), new CounterCommands());
-puppet.OutputRequested += msg => Console.WriteLine(msg);
-puppet.InlineOutputRequested += msg => Console.Write(msg);
-puppet.InputRequestedAsync = prompt =>
+Repl repl = new(new SampleCommands(), new CounterCommands());
+repl.OutputRequested += msg => Console.WriteLine(msg);
+repl.InlineOutputRequested += msg => Console.Write(msg);
+repl.InputRequestedAsync = prompt =>
 {
     Console.WriteLine(prompt);
     Console.Write("> ");
@@ -21,7 +21,7 @@ while (true)
     string? line = Console.ReadLine();
     if (string.IsNullOrWhiteSpace(line)) continue;
     if (line.Equals("exit", StringComparison.OrdinalIgnoreCase)) break;
-    await puppet.ExecuteAsync(line);
+    await repl.ExecuteAsync(line);
 }
 
 

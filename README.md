@@ -1,12 +1,12 @@
-# Puppet
-Puppet is a  C# class library for building REPL-style command systems. Commands are registered as a hierarchical tree, and can be executed via external string input, directly within the program, or by running scripts.
+# CCRepl
+CCRepl is a  C# class library for building REPL-style command systems. Commands are registered as a hierarchical tree, and can be executed via external string input, directly within the program, or by running scripts.
 
 ## Overview
-Puppet is designed to quickly and easily create interactive command environments, scripts, and automation tools.
+CCRepl is designed to quickly and easily create interactive command environments, scripts, and automation tools.
 
-The `Puppet` class manages input parsing, prompts, command address assignment, command aliases, execution, and testing.
+The `Repl` class manages input parsing, prompts, command address assignment, command aliases, execution, and testing.
 
-Commands are added by defining `PuppetCommand` objects inside command sets implementing `IPuppetCommandSet`, which are provided to `Puppet` during construction. 
+Commands are added by defining `ReplCommand` objects inside command sets implementing `ICommandSet`, which are provided to `Repl` during construction. 
 
 
 ## Features
@@ -22,25 +22,25 @@ Commands are added by defining `PuppetCommand` objects inside command sets imple
 ## Usage
 
 ### Setup
-To set up a Puppet command system:
+To set up a CCRepl command system:
 
-1. Create the Puppet object, assigning command sets as constructor parameters (these can be left blank initially). 
+1. Create the `Repl` object, assigning command sets as constructor parameters (these can be left blank initially). 
 2. Assign input & output handlers. 
 3. Create input method.
 
 Here is an example for a simple console app:
 
 ```csharp
-// Define Puppet object, assign commandsets:
-Puppet puppet = new(
+// Define Repl object, assign commandsets:
+Repl repl = new(
 	new MyCommands(),
 	// ...
 );
 
 // Assign input & output handlers:
-puppet.OutputRequested += msg => Console.WriteLine(msg);
-puppet.InlineOutputRequested += msg => Console.Write(msg);
-puppet.InputRequestedAsync = prompt =>
+repl.OutputRequested += msg => Console.WriteLine(msg);
+repl.InlineOutputRequested += msg => Console.Write(msg);
+repl.InputRequestedAsync = prompt =>
 {
 	Console.WriteLine(prompt);
 	Console.Write("> ");
@@ -53,31 +53,31 @@ while (true)
 	Console.Write("> ");
 	string? line = Console.ReadLine();
 	if (string.IsNullOrWhiteSpace(line)) continue;
-	await puppet.ExecuteAsync(line);
+	await repl.ExecuteAsync(line);
 }
 ``` 
 
 ### Command definition
 
-Commands are defined in `IPuppetCommandSet`:
+Commands are defined in `ICommandSet`:
 
 ```csharp
-public class MyCommands : IPuppetCommandSet
+public class MyCommands : ICommandSet
 {
-	public IReadOnlyList<PuppetCommand> Commands =>
+	public IReadOnlyList<ReplCommand> Commands =>
 	[
 		new(name "MyCommand"
 			executeAsync: MyCommandAsync
 		)
 	];
 
-	private Task MyCommandAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+	private Task MyCommandAsync(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
 	{
 		// ...
 	}
 }
 ```
-See `PuppetCommand` documentation for more details.
+See `ReplCommand` documentation for more details.
 
 ## Prerequisites
 - .NET 8

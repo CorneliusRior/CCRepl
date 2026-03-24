@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Puppet\Puppet.csproj" />
+    <ProjectReference Include="..\Puppet\CCRepl.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

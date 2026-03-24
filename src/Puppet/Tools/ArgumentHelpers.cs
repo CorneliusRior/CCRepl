@@ -1,7 +1,7 @@
-using Puppet.Models;
+using CCRepl.Models;
 using System.Text;
 
-namespace Puppet.Tools;
+namespace CCRepl.Tools;
 
 /// <summary>
 /// Methods for helping handle arguments in PuppetCommands (Human Input). Contains:
@@ -59,7 +59,7 @@ public static class ArgumentHelpers
     /// <param name="name">Assigned name for string, included in exception message</param>
     public static string String(this IReadOnlyList<string> args, int index, string name)
     {
-        if (index >= args.Count) throw new PuppetUserException($"Not enough arguments, missing string '{name}'.");
+        if (index >= args.Count) throw new ReplUserException($"Not enough arguments, missing string '{name}'.");
         return args[index];
     }
 
@@ -120,8 +120,8 @@ public static class ArgumentHelpers
     /// <param name="name">Assigned name for string, included in exception message</param>
     public static bool Bool(this IReadOnlyList<string> args, int index, string name)
     {
-        if (index >= args.Count) throw new PuppetUserException($"Not enough arguments, missing bool '{name}'.");
-        if (!bool.TryParse(args[index], out bool v)) throw new PuppetUserException($"Cannot parse bool '{name}': '{args[index]}'.");
+        if (index >= args.Count) throw new ReplUserException($"Not enough arguments, missing bool '{name}'.");
+        if (!bool.TryParse(args[index], out bool v)) throw new ReplUserException($"Cannot parse bool '{name}': '{args[index]}'.");
         else return v;
     }
 
@@ -135,7 +135,7 @@ public static class ArgumentHelpers
     {
         if (index >= args.Count) return fallBack;
         if (args[index] == "_") return fallBack;
-        if (!bool.TryParse(args[index], out bool v)) throw new PuppetUserException($"Cannot parse bool '{name}': '{args[index]}'.");
+        if (!bool.TryParse(args[index], out bool v)) throw new ReplUserException($"Cannot parse bool '{name}': '{args[index]}'.");
         else return v;
     }
 
@@ -147,7 +147,7 @@ public static class ArgumentHelpers
     public static bool? BoolOrNull(this IReadOnlyList<string> args, int index, string name)
     {
         if (index >= args.Count) return null;
-        if (!bool.TryParse(args[index], out bool v)) throw new PuppetUserException($"Cannot parse bool '{name}': '{args[index]}'.");
+        if (!bool.TryParse(args[index], out bool v)) throw new ReplUserException($"Cannot parse bool '{name}': '{args[index]}'.");
         else return v;
     }
 
@@ -158,8 +158,8 @@ public static class ArgumentHelpers
     /// <param name="name">Assigned name for string, included in exception message</param>
     public static double Double(this IReadOnlyList<string> args, int index, string name)
     {
-        if (index >= args.Count) throw new PuppetUserException($"Not enough arguments, missing double '{name}'.");
-        if (!double.TryParse(args[index], out double v)) throw new PuppetUserException($"Cannot parse double '{name}': '{args[index]}'.");
+        if (index >= args.Count) throw new ReplUserException($"Not enough arguments, missing double '{name}'.");
+        if (!double.TryParse(args[index], out double v)) throw new ReplUserException($"Cannot parse double '{name}': '{args[index]}'.");
         return v;
     }
 
@@ -173,7 +173,7 @@ public static class ArgumentHelpers
     {
         if (index >= args.Count) return fallBack;
         if (args[index] == "_") return fallBack;
-        if (!double.TryParse(args[index], out double v)) throw new PuppetUserException($"Cannot parse double '{name}': '{args[index]}'.");
+        if (!double.TryParse(args[index], out double v)) throw new ReplUserException($"Cannot parse double '{name}': '{args[index]}'.");
         return v;
     }
 
@@ -187,7 +187,7 @@ public static class ArgumentHelpers
     {
         if (index >= args.Count) return fallBack;
         if (args[index] == "_") return fallBack;
-        if (!double.TryParse(args[index], out double v)) throw new PuppetUserException($"Cannot parse double '{name}': '{args[index]}'.");
+        if (!double.TryParse(args[index], out double v)) throw new ReplUserException($"Cannot parse double '{name}': '{args[index]}'.");
         return v;
     }
 
@@ -197,11 +197,11 @@ public static class ArgumentHelpers
     /// <param name="index">Position of desired argument in "args"</param>
     /// <param name="name">Assigned name for string, included in exception message</param>
     /// <returns></returns>
-    /// <exception cref="PuppetUserException"></exception>
+    /// <exception cref="ReplUserException"></exception>
     public static double? DoubleOrNull(this IReadOnlyList<string> args, int index, string name)
     {
         if (index >= args.Count) return null;
-        if (!double.TryParse(args[index], out double v)) throw new PuppetUserException($"Cannot parse double '{name}': '{args[index]}'.");
+        if (!double.TryParse(args[index], out double v)) throw new ReplUserException($"Cannot parse double '{name}': '{args[index]}'.");
         return v;
     }
 
@@ -212,8 +212,8 @@ public static class ArgumentHelpers
     /// <param name="name">Assigned name for string, included in exception message</param>
     public static int Int(this IReadOnlyList<string> args, int index, string name)
     {
-        if (index >= args.Count) throw new PuppetUserException($"Not enough arguments, missing int '{name}'");
-        if (!int.TryParse(args[index], out int v)) throw new PuppetUserException($"Cannot parse int '{name}': .{args[index]}'.");
+        if (index >= args.Count) throw new ReplUserException($"Not enough arguments, missing int '{name}'");
+        if (!int.TryParse(args[index], out int v)) throw new ReplUserException($"Cannot parse int '{name}': .{args[index]}'.");
         return v;
     }
 
@@ -227,7 +227,7 @@ public static class ArgumentHelpers
     {
         if (index >= args.Count) return fallBack;
         if (args[index] == "_") return fallBack;
-        if (!int.TryParse(args[index], out int v)) throw new PuppetUserException($"Cannot parse int '{name}': .{args[index]}'.");
+        if (!int.TryParse(args[index], out int v)) throw new ReplUserException($"Cannot parse int '{name}': .{args[index]}'.");
         return v;
     }
 
@@ -239,7 +239,7 @@ public static class ArgumentHelpers
     public static int? IntOrNull(this IReadOnlyList<string> args, int index, string name)
     {
         if (index >= args.Count) return null;
-        if (!int.TryParse(args[index], out int v)) throw new PuppetUserException($"Cannot parse int '{name}': .{args[index]}'.");
+        if (!int.TryParse(args[index], out int v)) throw new ReplUserException($"Cannot parse int '{name}': .{args[index]}'.");
         return v;
     }
 
@@ -253,7 +253,7 @@ public static class ArgumentHelpers
     {
         if (index >= args.Count) return fallBack;
         if (args[index] == "_") return fallBack;
-        if (!int.TryParse(args[index], out int v)) throw new PuppetUserException($"Cannot parse int '{name}': .{args[index]}'.");
+        if (!int.TryParse(args[index], out int v)) throw new ReplUserException($"Cannot parse int '{name}': .{args[index]}'.");
         return v;
     }
 
@@ -264,8 +264,8 @@ public static class ArgumentHelpers
     /// <param name="name">Assigned name for string, included in exception message</param>
     public static DateTime dateTime(this IReadOnlyList<string> args, int index, string name)
     {
-        if (index >= args.Count) throw new PuppetUserException($"Not enough arguments, missing DateTme '{name}'");
-        if (!DateTime.TryParse(args[index], out DateTime v)) throw new PuppetUserException($"Cannot Parse DateTIme '{name}': '{args[index]}'.");
+        if (index >= args.Count) throw new ReplUserException($"Not enough arguments, missing DateTme '{name}'");
+        if (!DateTime.TryParse(args[index], out DateTime v)) throw new ReplUserException($"Cannot Parse DateTIme '{name}': '{args[index]}'.");
         return v;
     }
 
@@ -279,7 +279,7 @@ public static class ArgumentHelpers
     {
         if (index >= args.Count) return fallBack;
         if (args[index] == "_") return fallBack;
-        if (!DateTime.TryParse(args[index], out DateTime v)) throw new PuppetUserException($"Cannot parse DateTime '{name}': '{args[index]}'.");
+        if (!DateTime.TryParse(args[index], out DateTime v)) throw new ReplUserException($"Cannot parse DateTime '{name}': '{args[index]}'.");
         return v;
     }
 
@@ -291,7 +291,7 @@ public static class ArgumentHelpers
     public static DateTime? dateTimeOrNull(this IReadOnlyList<string> args, int index, string name)
     {
         if (index >= args.Count) return null;
-        if (!DateTime.TryParse(args[index], out DateTime v)) throw new PuppetUserException($"Cannot parse DateTime '{name}': '{args[index]}'.");
+        if (!DateTime.TryParse(args[index], out DateTime v)) throw new ReplUserException($"Cannot parse DateTime '{name}': '{args[index]}'.");
         return v;
     }
 
@@ -301,7 +301,7 @@ public static class ArgumentHelpers
         string[] noString = ["no", "n", "negative", "0", "false", "-"];
         if (yesString.Contains(input.ToLowerInvariant().Trim())) return true;
         if (noString.Contains(input.ToLowerInvariant().Trim())) return false;
-        if (fallBack is null) throw new PuppetUserException($"Cannot parse {input} to bool.");
+        if (fallBack is null) throw new ReplUserException($"Cannot parse {input} to bool.");
         return fallBack.Value;
     }
 }

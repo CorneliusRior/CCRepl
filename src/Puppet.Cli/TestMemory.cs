@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Puppet.Cli
+namespace CCRepl.Cli
 {
     public class TestMemory
     {

@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Puppet.Tools;
+namespace CCRepl.Tools;
 
 public static class StringHelpers
 {

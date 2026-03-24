@@ -1,33 +1,33 @@
-﻿using Puppet.CommandSets;
-using Puppet.Tools;
-using Puppet.Models;
+﻿using CCRepl.CommandSets;
+using CCRepl.Tools;
+using CCRepl.Models;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Puppet.Scripting;
+using CCRepl.Scripting;
 
-namespace Puppet;
+namespace CCRepl;
 
 /// <summary>
-/// Entry point for the Puppet library. This class is split between Puppet.cs, PuppetIO, and PuppetSetup.
+/// Entry point for the CCRepl library. This class is split between Repl.cs, ReplIO, and ReplSetup.
 /// </summary>
-public sealed partial class Puppet
+public sealed partial class Repl
 {
     // CommandIndex:
-    public Dictionary<string, PuppetCommand> CommandIndex = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, PuppetCommand> AliasIndex = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, ReplCommand> CommandIndex = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, ReplCommand> AliasIndex = new(StringComparer.OrdinalIgnoreCase);
        
     // Other variables:
     public int OneLineMaxWidth { get; set; } = 200;
     private readonly JsonSerializerOptions _jsonOptions = new();
     
     // Get command:
-    public PuppetCommand GetCommand(string commandHead)
+    public ReplCommand GetCommand(string commandHead)
     {
-        PuppetCommand cmd;
+        ReplCommand cmd;
         if (CommandIndex.ContainsKey(commandHead)) cmd = CommandIndex[commandHead];
         else if (AliasIndex.ContainsKey(commandHead)) cmd = AliasIndex[commandHead];
-        else throw new PuppetUserException($"Unknown command '{commandHead}': no command or alias found.");
+        else throw new ReplUserException($"Unknown command '{commandHead}': no command or alias found.");
         return cmd;
     }
 
@@ -50,8 +50,8 @@ public sealed partial class Puppet
             await ExecuteCommandAsync(commandHead, args, ct);
         }
         catch (OperationCanceledException) { WriteLine($"Cancelled."); }
-        catch (PuppetUserException ex) { WriteLine($"Input Error, {ex.Location} {ex.Message}"); }
-        catch (PuppetException ex) { WriteLine($"Error in {ex.Location} {ex.Message}"); }
+        catch (ReplUserException ex) { WriteLine($"Input Error, {ex.Location} {ex.Message}"); }
+        catch (ReplException ex) { WriteLine($"Error in {ex.Location} {ex.Message}"); }
         catch (Exception ex) { WriteLine($"Error: {ex.Message}"); }
     }
 
@@ -62,9 +62,9 @@ public sealed partial class Puppet
     /// <param name="args"></param>
     public async Task ExecuteCommandAsync(string commandHead, IReadOnlyList<string> args, CancellationToken ct = default)
     {
-        PuppetCommand cmd = GetCommand(commandHead);
-        if (!cmd.CanExecute) throw new PuppetException($"Command '{commandHead}' has no ExecuteAsync method: cannot execute.");
-        PuppetContext ctx = new(this);
+        ReplCommand cmd = GetCommand(commandHead);
+        if (!cmd.CanExecute) throw new ReplException($"Command '{commandHead}' has no ExecuteAsync method: cannot execute.");
+        ReplContext ctx = new(this);
         await cmd.ExecuteAsync!(ctx, args, ct);
     }
 
@@ -88,8 +88,8 @@ public sealed partial class Puppet
             if (ok) WriteLine($"[SUCCESS]: '{input}'.");
             else WriteLine($"[FAILURE]: '{input}'.");
         }
-        catch (PuppetUserException ex) { WriteLine($"Input Error, {ex.Location} {ex.Message}"); }
-        catch (PuppetException ex) { WriteLine($"Error in {ex.Location} {ex.Message}"); }
+        catch (ReplUserException ex) { WriteLine($"Input Error, {ex.Location} {ex.Message}"); }
+        catch (ReplException ex) { WriteLine($"Error in {ex.Location} {ex.Message}"); }
         catch (Exception ex) { WriteLine($"Error: {ex.Message}"); }
         
     }
@@ -103,13 +103,13 @@ public sealed partial class Puppet
     /// <returns></returns>
     public async Task<bool> TestCommandAsync(string commandHead, IReadOnlyList<string> args, CancellationToken ct = default)
     {
-        PuppetCommand cmd = GetCommand(commandHead);
+        ReplCommand cmd = GetCommand(commandHead);
         if (!cmd.CanTest)
         {
             WriteLine($"Command {commandHead} as no TestAsync method: cannot test.");
             return true;
         }
-        PuppetContext ctx = new(this);       
+        ReplContext ctx = new(this);       
         return await cmd.TestAsync!(ctx, args, ct);
     }
 
@@ -138,30 +138,30 @@ public sealed partial class Puppet
             }            
             await ExecuteCommandAsync(commandHead, args, ct);
         }
-        catch (PuppetUserException ex) { WriteLine($"Input Error, {ex.Location} {ex.Message}"); }
-        catch (PuppetException ex) { WriteLine($"Error in {ex.Location} {ex.Message}"); }
+        catch (ReplUserException ex) { WriteLine($"Input Error, {ex.Location} {ex.Message}"); }
+        catch (ReplException ex) { WriteLine($"Error in {ex.Location} {ex.Message}"); }
         catch (Exception ex) { WriteLine($"Error: {ex.Message}"); }
     }
 
     // Json input:
     public async Task ExecuteJsonAsync(string commandHead, string json, CancellationToken ct = default)
     {
-        PuppetCommand cmd = GetCommand(commandHead);
-        if (!cmd.CanExecuteJson) throw new PuppetException($"Command '{commandHead}' has no ExecuteJsonAsync method: cannot execute.");
-        if (cmd.JsonPayloadType is null) throw new PuppetException("Null JSON Payload - this command cannot parse JSON.");
+        ReplCommand cmd = GetCommand(commandHead);
+        if (!cmd.CanExecuteJson) throw new ReplException($"Command '{commandHead}' has no ExecuteJsonAsync method: cannot execute.");
+        if (cmd.JsonPayloadType is null) throw new ReplException("Null JSON Payload - this command cannot parse JSON.");
 
         object pl;
-        pl = JsonSerializer.Deserialize(json, cmd.JsonPayloadType, _jsonOptions) ?? throw new PuppetUserException($"Invalid JSON: Cannot parse.");
-        PuppetContext ctx = new(this);
+        pl = JsonSerializer.Deserialize(json, cmd.JsonPayloadType, _jsonOptions) ?? throw new ReplUserException($"Invalid JSON: Cannot parse.");
+        ReplContext ctx = new(this);
         await cmd.ExecuteJsonAsync!(ctx, pl, ct);
     }
 
     public async Task<bool> TestJsonAsync(string commandHead, string json, CancellationToken ct = default)
     {
         // Make sure command exists and can run:
-        PuppetCommand cmd;
+        ReplCommand cmd;
         try { cmd = GetCommand(commandHead); }
-        catch(PuppetUserException ex) 
+        catch(ReplUserException ex) 
         {
             WriteLine(ex.Message);
             return false;
@@ -181,8 +181,8 @@ public sealed partial class Puppet
 
         // Try to parse JSON:
         object pl;
-        try{ pl = JsonSerializer.Deserialize(json, cmd.JsonPayloadType, _jsonOptions) ?? throw new PuppetUserException($"Invalid JSON: Cannot parse."); }
-        catch (PuppetUserException ex)
+        try{ pl = JsonSerializer.Deserialize(json, cmd.JsonPayloadType, _jsonOptions) ?? throw new ReplUserException($"Invalid JSON: Cannot parse."); }
+        catch (ReplUserException ex)
         {
             WriteLine($"Command '{commandHead}' failed to parse JSON: '{ex.Message}'\n\"{json}\"");
             return false;
@@ -190,7 +190,7 @@ public sealed partial class Puppet
 
         // If there no TestJsonAsync method, return true, otherwise, run it:
         if (!cmd.CanTestJson) return true;
-        PuppetContext ctx = new(this);
+        ReplContext ctx = new(this);
         return await cmd.TestJsonAsync!(ctx, pl, ct);
     }
 
@@ -221,13 +221,13 @@ public sealed partial class Puppet
                     error.Add(s);
                 }
             }
-            catch (PuppetUserException ex)
+            catch (ReplUserException ex)
             {
                 WriteLine($"[ERROR] {s.PrintRef()}: Input Error, {ex.Location} {ex.Message}");
                 ok = false;
                 error.Add(s);
             }
-            catch (PuppetException ex)
+            catch (ReplException ex)
             {
                 WriteLine($"[ERROR] {s.PrintRef()}: Error in {ex.Location} {ex.Message}");
                 ok = false;

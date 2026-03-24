@@ -1,16 +1,16 @@
-using Puppet.Tools;
-using Puppet.Models;
-using static Puppet.Tools.CmdBuilder;
-using static Puppet.Scripting.ScriptParser;
-using Puppet.Scripting;
+using CCRepl.Tools;
+using CCRepl.Models;
+using static CCRepl.Tools.CmdBuilder;
+using static CCRepl.Scripting.ScriptParser;
+using CCRepl.Scripting;
 
-namespace Puppet.CommandSets;
+namespace CCRepl.CommandSets;
 
-public sealed class BaseCommands : IPuppetCommandSet
+public sealed class BaseCommands : ICommandSet
 {  
-    public IReadOnlyList<PuppetCommand> Commands =>
+    public IReadOnlyList<ReplCommand> Commands =>
     [
-        new PuppetCommand(
+        new ReplCommand(
             name: "Help",
             executeAsync: HelpAsync,
             aliases: ["h", "?"],
@@ -30,13 +30,13 @@ Otherwise, if it cannot be parsed as an attribute, it will interpret the argumen
 If two arguments are given, the first argument will be interpreted as a Help Attribute, and the second argument will be interpreted as a CommandHead.",
             children:
             [
-                new PuppetCommand(
+                new ReplCommand(
                     name: "List",
                     executeAsync: HelpListAsync,
                     usage: "list [string HelpAttribute] [string CommandHeads]",
                     description: "List all commands and specified help attribute (description by default), or just for all commands with specified CommandHeads."
                 ),
-                new PuppetCommand(
+                new ReplCommand(
                     name: "Full",
                     executeAsync: HelpFullAsync,
                     usage: "Help.Full [string CommandHeads]",
@@ -45,14 +45,14 @@ If two arguments are given, the first argument will be interpreted as a Help Att
             ]            
         ),
 
-        new PuppetCommand(
+        new ReplCommand(
             name: "Commands",
             executeAsync: CommandsAsync,
             aliases: ["CommandList", "cmd", "Command"],
             description: "List all commands",
             children:
             [
-                new PuppetCommand(
+                new ReplCommand(
                     name: "Aliases",
                     executeAsync: CommandAliasesAsync,
                     aliases: ["All"],
@@ -61,7 +61,7 @@ If two arguments are given, the first argument will be interpreted as a Help Att
             ]
         ),
 
-        new PuppetCommand(
+        new ReplCommand(
             name: "Test",
             executeAsync: TestAsync,
             usage: "Tast <Command> (arguments ... )",
@@ -89,7 +89,7 @@ If two arguments are given, the first argument will be interpreted as a Help Att
         ).Build()
     ];   
 
-    private Task HelpAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+    private Task HelpAsync(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
     {
         if (args.Count == 0)
         {
@@ -122,7 +122,7 @@ If two arguments are given, the first argument will be interpreted as a Help Att
 
     }
 
-    private Task HelpListAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+    private Task HelpListAsync(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
     {
         if (args.Count == 0)
         {
@@ -154,16 +154,16 @@ If two arguments are given, the first argument will be interpreted as a Help Att
         return Task.CompletedTask;
     }
 
-    private void PrintShort(PuppetContext ctx, HelpAttribute help, string searchTerm = "", bool oneline = false)
+    private void PrintShort(ReplContext ctx, HelpAttribute help, string searchTerm = "", bool oneline = false)
     {
         ctx.WriteLine("");
-        List<PuppetCommand> commands = ctx.SearchDictionary(searchTerm);
+        List<ReplCommand> commands = ctx.SearchDictionary(searchTerm);
         int col1space = Math.Min(commands.Max(c => c.Address!.Length) + 3, 100);
         int col2space = Math.Max(ctx.OneLineMaxWidth - col1space, 0);
-        foreach (PuppetCommand c in commands) ctx.WriteLine(c.PrintShort(col1space, col2space, help, oneline));
+        foreach (ReplCommand c in commands) ctx.WriteLine(c.PrintShort(col1space, col2space, help, oneline));
     }
 
-    private Task HelpFullAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+    private Task HelpFullAsync(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
     {
         if (args.Count == 0)
         {
@@ -180,22 +180,22 @@ If two arguments are given, the first argument will be interpreted as a Help Att
         return Task.CompletedTask;
     }
 
-    private void PrintLong(PuppetContext ctx, string searchTerm = "")
+    private void PrintLong(ReplContext ctx, string searchTerm = "")
     {
         ctx.WriteLine("");
-        List<PuppetCommand> commands = ctx.SearchDictionary(searchTerm);
-        foreach (PuppetCommand c in commands) ctx.WriteLine(c.PrintLong());
+        List<ReplCommand> commands = ctx.SearchDictionary(searchTerm);
+        foreach (ReplCommand c in commands) ctx.WriteLine(c.PrintLong());
     }
 
-    private Task CommandsAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+    private Task CommandsAsync(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
     {
         ctx.WriteLine("Printing all commands. Try 'help <command>' for more information:");
-        List<PuppetCommand> orderedCommands = ctx.SearchDictionary();
-        foreach (PuppetCommand c in orderedCommands) ctx.WriteLine(c.Address!);
+        List<ReplCommand> orderedCommands = ctx.SearchDictionary();
+        foreach (ReplCommand c in orderedCommands) ctx.WriteLine(c.Address!);
         return Task.CompletedTask;
     }
 
-    private Task CommandAliasesAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+    private Task CommandAliasesAsync(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
     {
         int col = Math.Min(ctx.AliasIndex.Max(kv => kv.Key.Length), (ctx.OneLineMaxWidth - 10) / 2);
         ctx.WriteLine("Printing all commands and aliases. Try 'help <command> for more information:");
@@ -204,7 +204,7 @@ If two arguments are given, the first argument will be interpreted as a Help Att
         return Task.CompletedTask;
     }
 
-    private async Task TestAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+    private async Task TestAsync(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
     {
         string commandHead = args[0];
         IReadOnlyList<string> testArgs = args.Skip(1).ToList();
@@ -213,14 +213,14 @@ If two arguments are given, the first argument will be interpreted as a Help Att
         else ctx.WriteLine($"Failed test: '{string.Join(' ', args)}'.");
     }
 
-    private async Task RunJson(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+    private async Task RunJson(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
     {
         string commandHead = args.String(0, "CommandHead");
         string json = await ctx.ReadLineAsync("Please enter Json argument:", ct);
         await ctx.ExecuteJsonAsync(commandHead, json);
     }
 
-    private async Task TestJson(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+    private async Task TestJson(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
     {
         string commandHead = args[0];
         string json = await ctx.ReadLineAsync("Please enter Json argument:", ct);
@@ -229,7 +229,7 @@ If two arguments are given, the first argument will be interpreted as a Help Att
         else ctx.WriteLine($"Failed test: '{string.Join(' ', args)}'.");
     }
 
-    private async Task ScriptRunAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+    private async Task ScriptRunAsync(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
     {
         string path = args.StringOrNull(0, "FilePath") ?? await ctx.ReadLineAsync("Please enter filepath:", ct);
         ctx.WriteLine($"Parsing file '{Path.GetFileName(path)}'...");
@@ -237,7 +237,7 @@ If two arguments are given, the first argument will be interpreted as a Help Att
         await ctx.ExecuteScriptAsync(script, ct);
     }
 
-    private async Task ScriptTestAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+    private async Task ScriptTestAsync(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
     {
         string path = args.StringOrNull(0, "File Path") ?? await ctx.ReadLineAsync("Please enter filepath:", ct);
         ctx.WriteLine($"Parsing file '{Path.GetFileName(path)}'...");
@@ -245,7 +245,7 @@ If two arguments are given, the first argument will be interpreted as a Help Att
         await ctx.TestScriptAsync(script, ct);
     }
 
-    private async Task ScriptTestAndRunAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+    private async Task ScriptTestAndRunAsync(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
     {
         string path = args.StringOrNull(0, "File Path") ?? await ctx.ReadLineAsync("Please enter filepath:", ct);
         ctx.WriteLine($"Parsing file '{Path.GetFileName(path)}'...");

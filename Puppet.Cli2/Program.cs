@@ -1,16 +1,17 @@
-﻿using Puppet.Cli2;
-using Puppet.Tools;
+﻿using CCRepl;
+using CCRepl.Cli2;
+using CCRepl.Tools;
 
 using System.Text;
 using System.Threading;
 
-Puppet.Puppet puppet = new(new SampleCommands());
-puppet.OutputRequested += msg => Console.WriteLine(msg);
-puppet.InlineOutputRequested += msg => Console.Write(msg);
+Repl repl = new(new SampleCommands());
+repl.OutputRequested += msg => Console.WriteLine(msg);
+repl.InlineOutputRequested += msg => Console.Write(msg);
 
 List<string> history = [];
 
-puppet.InputRequestedCancelableAsync = async (prompt, ct) =>
+repl.InputRequestedCancelableAsync = async (prompt, ct) =>
 {
     Console.WriteLine(prompt);
     ConsoleInputEditor editor = new("> ", history);
@@ -47,7 +48,7 @@ while (!exit)
     using CancellationTokenSource cts = new();
     Task keyWatcher = InputHelpers.ConsoleCancelKeyWatcher(cts);
 
-    try { await puppet.ExecuteAsync(input, cts.Token); }
+    try { await repl.ExecuteAsync(input, cts.Token); }
     catch (OperationCanceledException) { Console.WriteLine("Cancelled."); }
     finally
     {

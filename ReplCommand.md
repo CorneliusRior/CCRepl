@@ -1,10 +1,10 @@
-# PuppetCommand
+# ReplCommand
 
-The `PuppetCommand` class is the building block of a Puppet command system. Commands are defined inside command sets implementing `IPuppetCommandSet`, and privided to `Puppet` during construction.
+The `ReplCommand` class is the building block of a CCRepl command system. Commands are defined inside command sets implementing `ICommandSet`, and provided to `Repl` during construction.
 
-The `PuppetCommand` has only one required property, `Name`. When `Puppet` is built, each assigned command is automatically given an address `Address`, structured lke `parent.command.child`, which we call the "Command Head". The command can then be called by inputting the command head, followed by arguments seperated by spaces, stored in an IReadOnlyList\<string\> `args`.
+The `ReplCommand` has only one required property, `Name`. When `Repl` is built, each assigned command is automatically given an address `Address`, structured lke `parent.command.child`, which we call the "Command Head". The command can then be called by inputting the command head, followed by arguments seperated by spaces, stored in an IReadOnlyList\<string\> `args`.
 
-A `PuppetCommand` can be defined using either the class constructor, or `CommandBuilder`. To define a command which can take JSON input, use `CommandBuilder`.
+A `ReplCommand` can be defined using either the class constructor, or `CommandBuilder`. To define a command which can take JSON input, use `CommandBuilder`.
 
 ## Properties:
 
@@ -13,7 +13,7 @@ A `PuppetCommand` can be defined using either the class constructor, or `Command
 String by which this command is called. Consists of the root command's name followed by descendent names seperated by '.' (e.g. `Help.List`).
 - `Aliases`: A list of aliases which can be used instead of `Name`. Canonical name takes priority in all searches. Every alias must be unique in its respective level and have no siblings with identical aliases.
 - `Children`: Child commands of this command which are given `AddressString` "ThisName.ChildName".
-- `ExecuteAsync`: Main execution method of the command. Method does not need to be defined in the same command set class. Methods must return `Task`, and accept arguments `(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)`. They do not need to be `async`.
+- `ExecuteAsync`: Main execution method of the command. Method does not need to be defined in the same command set class. Methods must return `Task`, and accept arguments `(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)`. They do not need to be `async`.
 - `CanExecute`: Returns true if `ExecuteAsync` is not null.
 - `TestAsync`: Testing method of the command. Methods must return `Task<bool>` and accept the same arguments as `ExecuteAsync`: They do not need to be `async`. These should be constructed to parse arguments identically `ExecuteAsync`, and further validation can be made too.
 - `CanTest`: Returns true if `TestAsync` is not null.
@@ -28,21 +28,21 @@ String by which this command is called. Consists of the root command's name foll
 - `LongDescription`: String describing the command.
 
 ## Methods:
-- `PuppetCommand.PrintShort(int col1space, intcol2space, HelpAttribute help, bool oneline = true)`: Prints the command address and specified help parameter. `HelpAttribute` is an Enum, with options [ Aliases, Usage, Description, Examples, LongDescription ]. Truncates to specified column length and down to one line if `oneline` is set true.
-- `PuppetCommand.PrintLong()`: Prints all help parameters. Shown when `help` command is called on a specific command, or `help.full` is called.
+- `ReplCommand.PrintShort(int col1space, intcol2space, HelpAttribute help, bool oneline = true)`: Prints the command address and specified help parameter. `HelpAttribute` is an Enum, with options [ Aliases, Usage, Description, Examples, LongDescription ]. Truncates to specified column length and down to one line if `oneline` is set true.
+- `ReplCommand.PrintLong()`: Prints all help parameters. Shown when `help` command is called on a specific command, or `help.full` is called.
 
 ## Formatting:
-Puppet internal systems are generally case insensitive, so names and aliases can be written in any way. However, for the same of consistency, write names and aliases starting with a capital letter. Canonical names should only contain letters, no numbers or symbols. 
+CCRepl internal systems are generally case insensitive, so names and aliases can be written in any way. However, for the same of consistency, write names and aliases starting with a capital letter. Canonical names should only contain letters, no numbers or symbols. 
 
 ## Implementation:
-Create an implementation of `IPuppetCommand`, and add new command(s) to the list `Commands`. You can create placeholder commands with just `Name`, these will be registered in `Puppet` and will be listed in `help` and `commands` commands, but will have no functionality.
+Create an implementation of `ICommandSet`, and add new command(s) to the list `Commands`. You can create placeholder commands with just `Name`, these will be registered in `Repl` and will be listed in `help` and `commands` commands, but will have no functionality.
 
-This can be done with the constructor defined in the `PuppetCommand` class:
+This can be done with the constructor defined in the `ReplCommand` class:
 
 ```csharp
-public class MyCommands : IPuppetCommandSet
+public class MyCommands : ICommandSet
 {
-	public IReadOnlyList<PuppetCommand> Commands =>
+	public IReadOnlyList<ReplCommand> Commands =>
 	[
 		new(name: "MyCommand",
 			children:
@@ -59,9 +59,9 @@ or by using CommandBuilder:
 ```csharp
 using static CmdBuilder;
 
-public class MyCommands : IPuppetCommandSet
+public class MyCommands : ICommandSet
 {
-	public IReadOnlyLIst<PuppetCommand> Commands =>
+	public IReadOnlyLIst<ReplCommand> Commands =>
 	[
 		Cmd("MyCommand").Children(
 			Cmd("MySubCommand").Build()
@@ -73,12 +73,12 @@ public class MyCommands : IPuppetCommandSet
 
 It is recommended that you at least add a description, and usage if this is intended to be an executable command instead of a command category.
 
-To make an executable command, assign a suitable method to `ExecuteAsync`. Arguments are passed in the form of the IReadOnlyList\<string\> `args`. These can be parsed with `ArgumentHelpers` extensions, which can handle for varying argument counts, parsing and input errors. A `TestAsync` method can be made just be wrapping the input in `try { }`, returning false if a `PuppetUserException` is caught, true otherwise:
+To make an executable command, assign a suitable method to `ExecuteAsync`. Arguments are passed in the form of the IReadOnlyList\<string\> `args`. These can be parsed with `ArgumentHelpers` extensions, which can handle for varying argument counts, parsing and input errors. A `TestAsync` method can be made just be wrapping the input in `try { }`, returning false if a `ReplUserException` is caught, true otherwise:
 
 ```csharp
-public class MyCommands : IPuppetCommandSet
+public class MyCommands : ICommandSet
 {
-	public IReadOnlyList<PuppetCommand> Commands =>
+	public IReadOnlyList<ReplCommand> Commands =>
 	[
 		new(name: "MyCommand",
 			executeAsync: MyCommandAsync,
@@ -86,7 +86,7 @@ public class MyCommands : IPuppetCommandSet
 			usage: "MyCommand <int MyInt> <string MyString> [bool MyBool] [double? MyDouble]"
 	];
 
-	private Task MyCommandAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+	private Task MyCommandAsync(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
 	{
 		string myString		= args.String(1, "My String");			// Throws exception if absent
 		int myInt			= args.Int(0, "My Int");				// Throws exception if absent or cannot parse
@@ -95,7 +95,7 @@ public class MyCommands : IPuppetCommandSet
 		// ...
 	}
 
-	private Task<bool> MyCommandTestAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+	private Task<bool> MyCommandTestAsync(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
 	{
 		try
 		{
@@ -104,7 +104,7 @@ public class MyCommands : IPuppetCommandSet
 			bool myBool			= args.BoolOr(2, "My Bool", true);	
 			double? myDouble	= args.DoubleOrNull(3, "My Double");	
 		}
-		catch (PuppetUserException ex) { return false; }
+		catch (ReplUserException ex) { return false; }
 		return true;
 	}
 }
@@ -125,14 +125,14 @@ Commands can accept arguments in JSON format by defining `ExecuteJsonAsync`. Thi
 ```csharp
 using static CmdBuilder;
 
-pblic class MyCommands : IPuppetCommandSet
+pblic class MyCommands : ICommandSet
 {
-	public IReadOnlyList<PuppetCommand> Commands =>
+	public IReadOnlyList<ReplCommand> Commands =>
 	[
 		Cmd("MyCommand").ExecJson<MyCommandPayload>(MyCommandJsonAsync).Build()
 	];
 
-	private Task MyCommandJsonAsync(PuppetContext ctx, MyCommandPayload pl, CancellationToken ct)
+	private Task MyCommandJsonAsync(ReplContext ctx, MyCommandPayload pl, CancellationToken ct)
 	{
 		// ...
 	}
@@ -144,15 +144,15 @@ pblic class MyCommands : IPuppetCommandSet
 This code has the same functionality as the previous code block showing the definitions of `ExecuteAsync` and `TestAsync` - there is no need for input validation, as it is validated on input. `TestJsonAsync` can be added if further validation or testing is needed, but this should be reserved for exceptional cases.
 
 ### Prompts:
-Continuous input can be given using an `async` execution method and `PuppetContext` methods. Useful methods include:
+Continuous input can be given using an `async` execution method and `ReplContext` methods. Useful methods include:
 
-- `PuppetContext.ConfirmAsync()`: (Y/N) confirmation.
-- `PuppetContext.ConfirmRequireAsync()`: (Y/N) confirmation which loops if not parsed.
-- `PuppetContext.RequestAsync()`: Request entry of a certain type.
-- `PuppetContext.RequireAsync()`: Request entry of a certain type and loops if not parsed or cancelled.
+- `ReplContext.ConfirmAsync()`: (Y/N) confirmation.
+- `ReplContext.ConfirmRequireAsync()`: (Y/N) confirmation which loops if not parsed.
+- `ReplContext.RequestAsync()`: Request entry of a certain type.
+- `ReplContext.RequireAsync()`: Request entry of a certain type and loops if not parsed or cancelled.
 
 ```csharp
-private async Task MyPromptAsync(PuppetContext cts, IReadOnlyList<string> args, CancellationToken ct)
+private async Task MyPromptAsync(ReplContext cts, IReadOnlyList<string> args, CancellationToken ct)
 {
 	string myString = await ctx.ReadLineAsync("Enter MyString: "); // Accepts regardless.
 	

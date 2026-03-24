@@ -1,15 +1,15 @@
-# Puppet Scripting
-Puppet can run scripts of commands with arguments formatted in JSON.
+# CCRepl Scripting
+CCRepl can run scripts of commands with arguments formatted in JSON.
 
 ## Script Formatting
 
 ### Comments
-Comments are inert and are ignored by the parser. Puppet scripts have two kinds of comment: Block comments and line comments. 
+Comments are inert and are ignored by the parser. CCRepl scripts have two kinds of comment: Block comments and line comments. 
 
 - Block comments start and finish with `#`
 - Line comments start with `/` and finish on new line.
 
-```puppetscript
+```ccreplscript
 
 # This is an example of a block comment.
 I can span multiple lines. #
@@ -21,7 +21,7 @@ Comments can not be put inside of JSON statements, but they can go anywhere else
 ### Statements
 A statement is a command as defined in a script, it consists of a command head and a JSON statement.
 
-```puppetscript
+```ccreplscript
 MyCommand.Subcommand
 {
 	"MyString": "String"
@@ -34,7 +34,7 @@ MyCommand.Subcommand
 ### MetaData
 The first statement of a script needs to be a `ScriptMetaData` statement, which is formatted like so:
 
-```puppetscript
+```ccreplscript
 ScriptMetaData
 {
 	"Format": "v2"
@@ -53,4 +53,4 @@ More parameters may be added to this in future.
 ## Planned features
 
  - Be able to pass scripts to puppet externally.
- - Make puppet scripts its own FileType (.pup?) which can be opened by a program running puppet by default.
+ - Make CCRepl scripts its own FileType (.ccr?) which can be opened by a program running CCRepl by default.

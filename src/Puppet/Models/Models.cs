@@ -3,21 +3,21 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace Puppet.Models;
+namespace CCRepl.Models;
 
-public sealed class PuppetUserException : Exception
+public sealed class ReplUserException : Exception
 {
     public string Location { get; }
-    public PuppetUserException(string message, [CallerMemberName] string member = "", [CallerFilePath] string file = "", [CallerLineNumber] int line = 0) : base (message)
+    public ReplUserException(string message, [CallerMemberName] string member = "", [CallerFilePath] string file = "", [CallerLineNumber] int line = 0) : base (message)
     {
         Location = $"{Path.GetFileName(file)} (line {line}) {member}():";
     }    
 }
 
-public sealed class PuppetException : Exception
+public sealed class ReplException : Exception
 {
     public string Location { get; }
-    public PuppetException(string message, [CallerMemberName] string member = "", [CallerFilePath] string file = "", [CallerLineNumber] int line = 0) : base(message)
+    public ReplException(string message, [CallerMemberName] string member = "", [CallerFilePath] string file = "", [CallerLineNumber] int line = 0) : base(message)
     {
         Location = $"{Path.GetFileName(file)} (line {line}) {member}():";
     }

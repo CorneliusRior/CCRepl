@@ -1,27 +1,27 @@
-using Puppet.Tools;
+using CCRepl.Tools;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Puppet.Models;
+namespace CCRepl.Models;
 
-public class PuppetCommand
+public class ReplCommand
 {
     public required string Name { get; init; }
     public string Address { get; internal set; } = "";
     public IReadOnlyList<string> Aliases { get; init; }
-    public IReadOnlyList<PuppetCommand> Children { get; init; }
+    public IReadOnlyList<ReplCommand> Children { get; init; }
     
     // Function:
-    public Func<PuppetContext, IReadOnlyList<string>, CancellationToken, Task>? ExecuteAsync { get; init; }
+    public Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? ExecuteAsync { get; init; }
     public bool CanExecute => ExecuteAsync is not null;
 
-    public Func<PuppetContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? TestAsync { get; init; }
+    public Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? TestAsync { get; init; }
     public bool CanTest => TestAsync is not null;
 
 
-    public Func<PuppetContext, object, CancellationToken, Task>? ExecuteJsonAsync { get; init; }
+    public Func<ReplContext, object, CancellationToken, Task>? ExecuteJsonAsync { get; init; }
     public bool CanExecuteJson => ExecuteJsonAsync is not null;
 
-    public Func<PuppetContext, object, CancellationToken, Task<bool>>? TestJsonAsync { get; init; }
+    public Func<ReplContext, object, CancellationToken, Task<bool>>? TestJsonAsync { get; init; }
     public bool CanTestJson => TestJsonAsync is not null;
 
     public Type? JsonPayloadType { get; init; }
@@ -34,19 +34,19 @@ public class PuppetCommand
     public string? Remarks { get; init; } // You can just put whatever you want here, not used.
 
     [SetsRequiredMembers]
-    public PuppetCommand(
+    public ReplCommand(
         string name,
-        Func<PuppetContext, IReadOnlyList<string>, CancellationToken, Task>? executeAsync = null,
-        Func<PuppetContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? testAsync = null,
-        Func<PuppetContext, object, CancellationToken, Task>? executeJsonAsync = null,
-        Func<PuppetContext, object, CancellationToken, Task<bool>>? testJsonAsync = null,
+        Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? executeAsync = null,
+        Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? testAsync = null,
+        Func<ReplContext, object, CancellationToken, Task>? executeJsonAsync = null,
+        Func<ReplContext, object, CancellationToken, Task<bool>>? testJsonAsync = null,
         IReadOnlyList<string>? aliases = null,
         string? usage = null,
         string? description = null,
         IReadOnlyList<string>? examples = null,
         string? longDescription = null,
         string? remarks = null,
-        IReadOnlyList<PuppetCommand>? children = null
+        IReadOnlyList<ReplCommand>? children = null
     )
     {
         Name = name;
@@ -60,7 +60,7 @@ public class PuppetCommand
         Examples = examples ?? Array.Empty<string>();
         LongDescription = longDescription;
         Remarks = remarks;
-        Children = children ?? Array.Empty<PuppetCommand>();
+        Children = children ?? Array.Empty<ReplCommand>();
     }
 
     public string PrintShort(int col1space, int col2space, HelpAttribute help, bool oneline = true)

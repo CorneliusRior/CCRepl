@@ -1,4 +1,4 @@
-﻿using Puppet.Tools;
+﻿using CCRepl.Tools;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,7 +8,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace Puppet.Scripting
+namespace CCRepl.Scripting
 {
     public static class ScriptParser
     {

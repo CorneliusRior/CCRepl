@@ -1,21 +1,21 @@
-﻿using Puppet.Tools;
-using Puppet.Models;
+﻿using CCRepl.Tools;
+using CCRepl.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Puppet.Example;
+namespace CCRepl.Example;
 
 /// <summary>
 /// GPT generated this so that we can test some things. 
 /// </summary>
-public sealed class CounterCommands : IPuppetCommandSet
+public sealed class CounterCommands : ICommandSet
 {
     private readonly Dictionary<string, int> _counters = new(StringComparer.OrdinalIgnoreCase);
 
-    public IReadOnlyList<PuppetCommand> Commands =>
+    public IReadOnlyList<ReplCommand> Commands =>
     [
         CommandBuilder.Command("Counter")
             .Aliases("ctr", "count")
@@ -145,7 +145,7 @@ Counter.Reset
             .Build()
     ];
 
-    private Task<bool> CounterCreateTestAsync(PuppetContext ctx, CreatePayload payload, CancellationToken ct)
+    private Task<bool> CounterCreateTestAsync(ReplContext ctx, CreatePayload payload, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(payload.Name))
         {
@@ -162,7 +162,7 @@ Counter.Reset
         return Task.FromResult(true);
     }
 
-    private Task CounterCreateAsync(PuppetContext ctx, CreatePayload payload, CancellationToken ct)
+    private Task CounterCreateAsync(ReplContext ctx, CreatePayload payload, CancellationToken ct)
     {
         int initialValue = payload.InitialValue ?? 0;
         _counters.Add(payload.Name, initialValue);
@@ -170,12 +170,12 @@ Counter.Reset
         return Task.CompletedTask;
     }
 
-    private Task<bool> CounterIncrementTestAsync(PuppetContext ctx, IncrementPayload payload, CancellationToken ct)
+    private Task<bool> CounterIncrementTestAsync(ReplContext ctx, IncrementPayload payload, CancellationToken ct)
     {
         return RequireExistingCounter(ctx, payload.Name);
     }
 
-    private Task CounterIncrementAsync(PuppetContext ctx, IncrementPayload payload, CancellationToken ct)
+    private Task CounterIncrementAsync(ReplContext ctx, IncrementPayload payload, CancellationToken ct)
     {
         int amount = payload.Amount ?? 1;
         _counters[payload.Name] += amount;
@@ -183,12 +183,12 @@ Counter.Reset
         return Task.CompletedTask;
     }
 
-    private Task<bool> CounterDecrementTestAsync(PuppetContext ctx, DecrementPayload payload, CancellationToken ct)
+    private Task<bool> CounterDecrementTestAsync(ReplContext ctx, DecrementPayload payload, CancellationToken ct)
     {
         return RequireExistingCounter(ctx, payload.Name);
     }
 
-    private Task CounterDecrementAsync(PuppetContext ctx, DecrementPayload payload, CancellationToken ct)
+    private Task CounterDecrementAsync(ReplContext ctx, DecrementPayload payload, CancellationToken ct)
     {
         int amount = payload.Amount ?? 1;
         _counters[payload.Name] -= amount;
@@ -196,7 +196,7 @@ Counter.Reset
         return Task.CompletedTask;
     }
 
-    private Task<bool> CounterMultiplyTestAsync(PuppetContext ctx, MultiplyPayload payload, CancellationToken ct)
+    private Task<bool> CounterMultiplyTestAsync(ReplContext ctx, MultiplyPayload payload, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(payload.Name))
         {
@@ -219,14 +219,14 @@ Counter.Reset
         return Task.FromResult(true);
     }
 
-    private Task CounterMultiplyAsync(PuppetContext ctx, MultiplyPayload payload, CancellationToken ct)
+    private Task CounterMultiplyAsync(ReplContext ctx, MultiplyPayload payload, CancellationToken ct)
     {
         _counters[payload.Name] *= payload.Factor!.Value;
         ctx.WriteLine($"Multiplied '{payload.Name}' by {payload.Factor.Value}. New value: {_counters[payload.Name]}.");
         return Task.CompletedTask;
     }
 
-    private Task<bool> CounterRenameTestAsync(PuppetContext ctx, RenamePayload payload, CancellationToken ct)
+    private Task<bool> CounterRenameTestAsync(ReplContext ctx, RenamePayload payload, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(payload.Name))
         {
@@ -255,7 +255,7 @@ Counter.Reset
         return Task.FromResult(true);
     }
 
-    private Task CounterRenameAsync(PuppetContext ctx, RenamePayload payload, CancellationToken ct)
+    private Task CounterRenameAsync(ReplContext ctx, RenamePayload payload, CancellationToken ct)
     {
         int value = _counters[payload.Name];
         _counters.Remove(payload.Name);
@@ -264,12 +264,12 @@ Counter.Reset
         return Task.CompletedTask;
     }
 
-    private Task<bool> CounterDeleteTestAsync(PuppetContext ctx, DeletePayload payload, CancellationToken ct)
+    private Task<bool> CounterDeleteTestAsync(ReplContext ctx, DeletePayload payload, CancellationToken ct)
     {
         return RequireExistingCounter(ctx, payload.Name);
     }
 
-    private Task CounterDeleteAsync(PuppetContext ctx, DeletePayload payload, CancellationToken ct)
+    private Task CounterDeleteAsync(ReplContext ctx, DeletePayload payload, CancellationToken ct)
     {
         int value = _counters[payload.Name];
         _counters.Remove(payload.Name);
@@ -277,18 +277,18 @@ Counter.Reset
         return Task.CompletedTask;
     }
 
-    private Task<bool> CounterGetTestAsync(PuppetContext ctx, GetPayload payload, CancellationToken ct)
+    private Task<bool> CounterGetTestAsync(ReplContext ctx, GetPayload payload, CancellationToken ct)
     {
         return RequireExistingCounter(ctx, payload.Name);
     }
 
-    private Task CounterGetAsync(PuppetContext ctx, GetPayload payload, CancellationToken ct)
+    private Task CounterGetAsync(ReplContext ctx, GetPayload payload, CancellationToken ct)
     {
         ctx.WriteLine($"Counter '{payload.Name}' = {_counters[payload.Name]}");
         return Task.CompletedTask;
     }
 
-    private Task CounterListAsync(PuppetContext ctx, ListPayload payload, CancellationToken ct)
+    private Task CounterListAsync(ReplContext ctx, ListPayload payload, CancellationToken ct)
     {
         if (_counters.Count == 0)
         {
@@ -302,19 +302,19 @@ Counter.Reset
         return Task.CompletedTask;
     }
 
-    private Task<bool> CounterResetTestAsync(PuppetContext ctx, ResetPayload payload, CancellationToken ct)
+    private Task<bool> CounterResetTestAsync(ReplContext ctx, ResetPayload payload, CancellationToken ct)
     {
         return RequireExistingCounter(ctx, payload.Name);
     }
 
-    private Task CounterResetAsync(PuppetContext ctx, ResetPayload payload, CancellationToken ct)
+    private Task CounterResetAsync(ReplContext ctx, ResetPayload payload, CancellationToken ct)
     {
         _counters[payload.Name] = 0;
         ctx.WriteLine($"Reset counter '{payload.Name}' to 0.");
         return Task.CompletedTask;
     }
 
-    private Task<bool> RequireExistingCounter(PuppetContext ctx, string? name)
+    private Task<bool> RequireExistingCounter(ReplContext ctx, string? name)
     {
         if (string.IsNullOrWhiteSpace(name))
         {

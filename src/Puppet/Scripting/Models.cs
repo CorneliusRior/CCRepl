@@ -1,4 +1,4 @@
-﻿using Puppet.Tools;
+﻿using CCRepl.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Puppet.Scripting
+namespace CCRepl.Scripting
 {
     public sealed class ScriptException : Exception
     {

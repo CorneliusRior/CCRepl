@@ -1,6 +1,6 @@
-# Puppet Tools
+# CCRepl Tools
 
-`Puppet.Tools` contains tools to help build command systems easily.
+`CCRepl.Tools` contains tools to help build command systems easily.
 
 ## CommandBuilder
 
@@ -8,19 +8,19 @@ Command builder is a tool for building commands. It also allows for the definiti
 
 ### How to use:
 
-Type `using Puppet.Tools.CmdBuiler` at the top of a file. `CommandBuilder` can now be accessed with `Cmd(string name)`. Alternatively, every `CommandBuilder` declaration can be written as `CommandBuilder.Command(string name)`. This creates a `CommandBuilder` instance which can be added to with extensions, such as `.Exec()`, `.Usage()` and `.Description()`. One a `CommandBuilder` is complete, use `.Build()` to convert it to a `PuppetCommand`.
+Type `using static CCRepl.Tools.CmdBuiler` at the top of a file. `CommandBuilder` can now be accessed with `Cmd(string name)`. Alternatively, every `CommandBuilder` declaration can be written as `CommandBuilder.Command(string name)`. This creates a `CommandBuilder` instance which can be added to with extensions, such as `.Exec()`, `.Usage()` and `.Description()`. One a `CommandBuilder` is complete, use `.Build()` to convert it to a `ReplCommand`.
 
-As every other field for a `PuppetCommand` is optional, extention methods can be added only as required. Once a command is defined with a name, and the command set is added to `Puppet` on construction, it will be registered and will appear on the `help` list.
+As every other field for a `ReplCommand` is optional, extention methods can be added only as required. Once a command is defined with a name, and the command set is added to `Repl` on construction, it will be registered and will appear on the `help` list.
 
 Here is an example of a command definition using every extension:
 
 ```csharp
 
-using Puppet.Tools.CmdBuilder;
+using static CCRepl.Tools.CmdBuilder;
 
-public sealed class MyCommandSet : IPuppetCommandSet
+public sealed class MyCommandSet : ICommandSet
 {
-	public IReadOnlyList<PuppetCommand> Commands =>
+	public IReadOnlyList<ReplCommand> Commands =>
 	[
 		Cmd("MyCommand).
 			.Aliases("mc", "SampleCommand", "MyCmd")
@@ -44,7 +44,7 @@ public sealed class MyCommandSet : IPuppetCommandSet
 				}
 				"""
 			)
-			.AddExample("MyCommand 50 puppet false 10.5")
+			.AddExample("MyCommand 50 Hello false 10.5")
 			.Remarks("This is just a place to keep notes.")
 			.Children(
 				Cmd("FirstSubCommand")
@@ -74,7 +74,7 @@ public sealed class MyCommandSet : IPuppetCommandSet
 - `Cmd(string name)` should be on its own line.
 - Every extension should be on its own line and indented once.
 - `Build()` should have the same indentation as the `Cmd()` statement.
-- Extentions should be in this general order (identical order to `PuppetCommand` constructor).
+- Extentions should be in this general order (identical order to `ReplCommand` constructor).
 - `Children()` or `AddChild()` should always be the last extension used (if defined).
 - Every subcommand definition should have a one-line gap afterwards.
 
@@ -94,21 +94,21 @@ Using index, here is how we would extract the arguments for a command with argum
 
 ```csharp
 
-private Task Execute(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+private Task Execute(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
 {
-	if (args.Count == 0) throw new PuppetUserException($"Not enough arguments, missing int 'Id'.");
-	if (!int.TryParse(args[0], out int id) throw new PuppetUserException($"Cannot parse int 'Id': '{args[0]}'.");
+	if (args.Count == 0) throw new ReplUserException($"Not enough arguments, missing int 'Id'.");
+	if (!int.TryParse(args[0], out int id) throw new ReplUserException($"Cannot parse int 'Id': '{args[0]}'.");
 
 	DateTime date;
 	if (args.Count > 1) 
 	{
 		if (args[1] == "_") date = DateTime.Today;
-		if (!DateTime.TryParse(args[1], out date) throw new PuppetUserException($"Cannot parse DateTime 'Date': '{args[1]}'.");
+		if (!DateTime.TryParse(args[1], out date) throw new ReplUserException($"Cannot parse DateTime 'Date': '{args[1]}'.");
 	}
 	else date = DateTime.Today;
 
 	double? value;
-	if (args.Count > 2) if (!double.TryPase(args[2], out value)) throw new PuppetUserException($"Cannot parse double `Value`: `{args[2]}`.");
+	if (args.Count > 2) if (!double.TryPase(args[2], out value)) throw new ReplUserException($"Cannot parse double `Value`: `{args[2]}`.");
 	else value = null;
 
 	// ...
@@ -118,7 +118,7 @@ private Task Execute(PuppetContext ctx, IReadOnlyList<string> args, Cancellation
 Here is how we can define the same thing it using argument extractor methods:
 
 ```csharp
-private Task Execute(PuppetContext cts, IReadOnlyList<string> args, CancellationToken ct)
+private Task Execute(ReplContext cts, IReadOnlyList<string> args, CancellationToken ct)
 {
 	int id = args.Int(0, "Id");
 	DateTime date = args.DateTimeOr(0, "Date", DateTime.Today);

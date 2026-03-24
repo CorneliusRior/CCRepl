@@ -1,11 +1,11 @@
 ﻿
 
-using Puppet.Models;
-using Puppet.Tools;
+using CCRepl.Models;
+using CCRepl.Tools;
 
-namespace Puppet;
+namespace CCRepl;
 
-public sealed partial class Puppet
+public sealed partial class Repl
 {
     public event Action<string>? OutputRequested;
     public event Action<string>? InlineOutputRequested;

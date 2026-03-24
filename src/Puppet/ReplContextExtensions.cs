@@ -1,12 +1,12 @@
-﻿using Puppet.Tools;
-using Puppet.Models;
+﻿using CCRepl.Tools;
+using CCRepl.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Puppet
+namespace CCRepl
 {
-    public static class PuppetContextExtensions
+    public static class ReplContextExtensions
     {
         /// <summary>
         /// Used to parse and accept input of any type, returns fallBack if cannot parse (used for defaults). Used like:
@@ -21,14 +21,14 @@ namespace Puppet
         /// <param name="parser"></param>
         /// <param name="fallBack"></param>
         /// <returns></returns>
-        /// <exception cref="PuppetUserException"></exception>
-        public static async Task<T> RequestAsync<T>(this PuppetContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T Value)> parser, T? fallBack = default)
+        /// <exception cref="ReplUserException"></exception>
+        public static async Task<T> RequestAsync<T>(this ReplContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T Value)> parser, T? fallBack = default)
         {
             string input = await ctx.ReadLineAsync(prompt, ct);
             var result = parser(input);
             if (result.success) return result.Value;
             if (fallBack is not null) return fallBack;
-            throw new PuppetUserException($"Cannot parse '{input}'");
+            throw new ReplUserException($"Cannot parse '{input}'");
         }
 
         /// <summary>
@@ -54,14 +54,14 @@ namespace Puppet
         /// <param name="fallBack"></param>
         /// <param name="defaultStrings"></param>
         /// <returns></returns>
-        /// <exception cref="PuppetUserException"></exception>
-        public static async Task<T> RequestAsync<T>(this PuppetContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T Value)> parser, T fallBack, params string[] defaultStrings)
+        /// <exception cref="ReplUserException"></exception>
+        public static async Task<T> RequestAsync<T>(this ReplContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T Value)> parser, T fallBack, params string[] defaultStrings)
         {
             string input = await ctx.ReadLineAsync(prompt, ct);
             if (defaultStrings.Any(s => string.Equals(s, input, StringComparison.OrdinalIgnoreCase))) return fallBack;
             var result = parser(input);
             if (result.success) return result.Value;
-            throw new PuppetUserException($"Cannot parse '{input}'");
+            throw new ReplUserException($"Cannot parse '{input}'");
         }
 
         /// <summary>
@@ -85,12 +85,12 @@ namespace Puppet
         /// <param name="retryPrompt"></param>
         /// <param name="parser"></param>
         /// <returns></returns>
-        public static async Task<T> RequireAsync<T>( this PuppetContext ctx, CancellationToken ct,  string prompt, Func<string, (bool success, T Value)> parser, string retryPrompt)
+        public static async Task<T> RequireAsync<T>( this ReplContext ctx, CancellationToken ct,  string prompt, Func<string, (bool success, T Value)> parser, string retryPrompt)
         {
             while (true)
             {
                 try { return await ctx.RequestAsync(ct, prompt, parser); }
-                catch (PuppetUserException) { ctx.WriteLine(retryPrompt); }
+                catch (ReplUserException) { ctx.WriteLine(retryPrompt); }
             }
         }
 
@@ -120,14 +120,14 @@ namespace Puppet
         /// <param name="fallBack"></param>
         /// <param name="defaultStrings"></param>
         /// <returns></returns>
-        public static async Task<T> RequireAsync<T>(this PuppetContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T Value)> parser, string retryPrompt, T fallBack, params string[] defaultStrings
+        public static async Task<T> RequireAsync<T>(this ReplContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T Value)> parser, string retryPrompt, T fallBack, params string[] defaultStrings
             )
         {
             if (defaultStrings.Length == 0) defaultStrings = [" ", "default", "fallback"];
             while (true)
             {
                 try { return await ctx.RequestAsync(ct, prompt, parser, fallBack, defaultStrings); }
-                catch (PuppetUserException) { ctx.WriteLine(retryPrompt); }
+                catch (ReplUserException) { ctx.WriteLine(retryPrompt); }
             }
         }
 
@@ -138,7 +138,7 @@ namespace Puppet
         /// <param name="prompt">What user is presented with.</param>
         /// <param name="retryPrompt">What user is presented with if input is null or white space.</param>
         /// <returns></returns>
-        public static async Task<string> RequireString(this PuppetContext ctx, CancellationToken ct, string prompt, string retryPrompt)
+        public static async Task<string> RequireString(this ReplContext ctx, CancellationToken ct, string prompt, string retryPrompt)
         {
             while (true)
             {
@@ -154,7 +154,7 @@ namespace Puppet
         /// <param name="ctx"></param>
         /// <param name="prompt">What user is presented with.</param>
         /// <returns></returns>
-        public static async Task<string?> RequestStringNullable(this PuppetContext ctx, CancellationToken ct, string prompt)
+        public static async Task<string?> RequestStringNullable(this ReplContext ctx, CancellationToken ct, string prompt)
         {
             string? input = await ctx.ReadLineAsync(prompt, ct);
             if (string.IsNullOrWhiteSpace(input)) return null;
@@ -166,10 +166,10 @@ namespace Puppet
         /// <param name="ctx"></param>
         /// <param name="searchTerm"></param>
         /// <returns></returns>
-        public static List<PuppetCommand> SearchDictionary(this PuppetContext ctx, string searchTerm = "")
+        public static List<ReplCommand> SearchDictionary(this ReplContext ctx, string searchTerm = "")
         {
             if (string.IsNullOrWhiteSpace(searchTerm)) return ctx.CommandIndex.Values.ToList();
-            List<PuppetCommand> filtered = ctx.CommandIndex.Values.Where(c => c.Address.StartsWith(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
+            List<ReplCommand> filtered = ctx.CommandIndex.Values.Where(c => c.Address.StartsWith(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
             if (filtered.Count == 0)
                 filtered = ctx.AliasIndex
                     .Where(kv => kv.Key.StartsWith(searchTerm, StringComparison.OrdinalIgnoreCase))
@@ -178,9 +178,9 @@ namespace Puppet
             return filtered;
         }
 
-        public static async Task<bool> ConfirmAsync(this PuppetContext ctx, CancellationToken ct, string prompt = $"(Y/N):", bool? fallBack = null) => (await ctx.ReadLineAsync(prompt, ct)).ParseConfirmation(fallBack);
+        public static async Task<bool> ConfirmAsync(this ReplContext ctx, CancellationToken ct, string prompt = $"(Y/N):", bool? fallBack = null) => (await ctx.ReadLineAsync(prompt, ct)).ParseConfirmation(fallBack);
 
-        public static async Task<bool> ConfirmRequireAsync(this PuppetContext ctx, CancellationToken ct, string prompt = $"(Y/N)", string retryPrompt = "Could not parse, try again.")
+        public static async Task<bool> ConfirmRequireAsync(this ReplContext ctx, CancellationToken ct, string prompt = $"(Y/N)", string retryPrompt = "Could not parse, try again.")
         {
             while (true)
             {

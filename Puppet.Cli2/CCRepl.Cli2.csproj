@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\Puppet\Puppet.csproj" />
+    <ProjectReference Include="..\src\Puppet\CCRepl.csproj" />
   </ItemGroup>
 
 </Project>

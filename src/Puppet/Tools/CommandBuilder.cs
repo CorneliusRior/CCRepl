@@ -1,4 +1,4 @@
-﻿using Puppet.Models;
+﻿using CCRepl.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Puppet.Tools
+namespace CCRepl.Tools
 {
     /// <summary>
     /// Tool for building commands. Allows definition of ExecuteJsonAsync &c.
@@ -16,13 +16,13 @@ namespace Puppet.Tools
         private readonly string _name;
         private readonly List<string> _aliases = [];
         private readonly List<string> _examples = [];
-        private readonly List<PuppetCommand> _children = [];
+        private readonly List<ReplCommand> _children = [];
 
-        private Func<PuppetContext, IReadOnlyList<string>, CancellationToken, Task>? _executeAsync;
-        private Func<PuppetContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? _testAsync;
+        private Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? _executeAsync;
+        private Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? _testAsync;
 
-        private Func<PuppetContext, object, CancellationToken, Task>? _executeJsonAsync;
-        private Func<PuppetContext, object, CancellationToken, Task<bool>>? _testJsonAsync;
+        private Func<ReplContext, object, CancellationToken, Task>? _executeJsonAsync;
+        private Func<ReplContext, object, CancellationToken, Task<bool>>? _testJsonAsync;
         private Type? _jsonPayloadType;
 
         private string? _usage;
@@ -35,9 +35,9 @@ namespace Puppet.Tools
             _name = name;
         }
 
-        public PuppetCommand Build()
+        public ReplCommand Build()
         {
-            return new PuppetCommand(
+            return new ReplCommand(
                 name:               _name,
                 executeAsync:       _executeAsync,
                 testAsync:          _testAsync,
@@ -70,26 +70,26 @@ namespace Puppet.Tools
 
         public CommandBuilder AliasAdd(string alias) => AddAlias(alias);
 
-        public CommandBuilder Exec(Func<PuppetContext, IReadOnlyList<string>, CancellationToken, Task> executeAsync)
+        public CommandBuilder Exec(Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task> executeAsync)
         {
             _executeAsync = executeAsync;
             return this;
         }
 
-        public CommandBuilder Test(Func<PuppetContext, IReadOnlyList<string>, CancellationToken, Task<bool>> testAsync)
+        public CommandBuilder Test(Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>> testAsync)
         {
             _testAsync = testAsync;
             return this;
         }
 
-        public CommandBuilder ExecJson<TPayload>(Func<PuppetContext, TPayload, CancellationToken, Task> executeJsonAsync)
+        public CommandBuilder ExecJson<TPayload>(Func<ReplContext, TPayload, CancellationToken, Task> executeJsonAsync)
         {
             _jsonPayloadType = typeof(TPayload);
             _executeJsonAsync = (ctx, payload, ct) => executeJsonAsync(ctx, (TPayload)payload, ct);
             return this;
         }
 
-        public CommandBuilder TestJson<TPayload>(Func<PuppetContext, TPayload, CancellationToken, Task<bool>> testJsonAsync)
+        public CommandBuilder TestJson<TPayload>(Func<ReplContext, TPayload, CancellationToken, Task<bool>> testJsonAsync)
         {
             _jsonPayloadType = typeof(TPayload);
             _testJsonAsync = (ctx, payload, ct) => testJsonAsync(ctx, (TPayload)payload, ct);
@@ -134,22 +134,22 @@ namespace Puppet.Tools
             return this;
         }
 
-        public CommandBuilder Children(params PuppetCommand[] children)
+        public CommandBuilder Children(params ReplCommand[] children)
         {
             _children.AddRange(children);
             return this;
         }
 
-        public CommandBuilder AddChild(PuppetCommand child)
+        public CommandBuilder AddChild(ReplCommand child)
         {
             _children.Add(child);
             return this;
         }
 
-        public CommandBuilder ChildAdd(PuppetCommand child) => AddChild(child);
-        public CommandBuilder SubCommands(params PuppetCommand[] subCommands) => Children(subCommands);
-        public CommandBuilder AddSubcommand(PuppetCommand subCommand) => AddChild(subCommand);
-        public CommandBuilder SubcommandAdd(PuppetCommand subCommand) => AddChild(subCommand);
+        public CommandBuilder ChildAdd(ReplCommand child) => AddChild(child);
+        public CommandBuilder SubCommands(params ReplCommand[] subCommands) => Children(subCommands);
+        public CommandBuilder AddSubcommand(ReplCommand subCommand) => AddChild(subCommand);
+        public CommandBuilder SubcommandAdd(ReplCommand subCommand) => AddChild(subCommand);
     }
 
     public static class CmdBuilder

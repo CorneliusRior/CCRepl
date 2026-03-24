@@ -1,15 +1,15 @@
-﻿using static Puppet.Tools.CmdBuilder;
+﻿using static CCRepl.Tools.CmdBuilder;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Puppet.Models;
-using Puppet.Tools;
+using CCRepl.Models;
+using CCRepl.Tools;
 
-namespace Puppet.Cli2
+namespace CCRepl.Cli2
 {
-    internal class SampleCommands : IPuppetCommandSet
+    internal class SampleCommands : ICommandSet
     {
-        public IReadOnlyList<PuppetCommand> Commands =>
+        public IReadOnlyList<ReplCommand> Commands =>
         [
             new(name: "Assessment",                
                 executeAsync: ConfirmAsync,
@@ -31,7 +31,7 @@ namespace Puppet.Cli2
             Cmd("ViewFileSample").Exec(ViewFileSample).Build()
         ];
 
-        private async Task ViewFileSample(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        private async Task ViewFileSample(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
         {
             string path = args.String(0, "Path");
             string[] lines = File.ReadAllLines(path);
@@ -43,7 +43,7 @@ namespace Puppet.Cli2
             ctx.ClearStatus("Done");
         }
 
-        private async Task WaitAnimations(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        private async Task WaitAnimations(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
         {
             int type = args.IntOr(0, "Type", 0);
             string pre = args.StringOr(1, "Prefix", "Loading");
@@ -71,28 +71,28 @@ namespace Puppet.Cli2
             
         }
 
-        private Task ToBox(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        private Task ToBox(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
         {
             string msg = args.String(0, "Msg").Replace("\\n", "\n");
             ctx.WriteLine(msg.ToBox());
             return Task.CompletedTask;
         }
 
-        private Task ToDoubleBox(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        private Task ToDoubleBox(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
         {
             string msg = args.String(0, "Msg").Replace("\\n", "\n");
             ctx.WriteLine(msg.ToDoubleBox());
             return Task.CompletedTask;
         }
 
-        private Task TestJsonAsync(PuppetContext ctx, TestPayload pl, CancellationToken ct)
+        private Task TestJsonAsync(ReplContext ctx, TestPayload pl, CancellationToken ct)
         {
             ctx.WriteLine("Presumably parsed if you're seeing this:");
             ctx.WriteLine($"ID = {pl.Id}, Name = {pl.Name}, Date of Birth = {pl.DateOfBirth.ToString("d")}, Favourite color = {pl.FavouriteColor ?? "No answer"}");
             return Task.CompletedTask;
         }
 
-        private async Task<bool> TestTestJsonAsync(PuppetContext ctx, TestPayload pl, CancellationToken ct)
+        private async Task<bool> TestTestJsonAsync(ReplContext ctx, TestPayload pl, CancellationToken ct)
         {
             if (pl.FavouriteColor is null) return true;
             if (pl.FavouriteColor.Equals("pink", StringComparison.OrdinalIgnoreCase)) return false;
@@ -101,7 +101,7 @@ namespace Puppet.Cli2
 
         public sealed record TestPayload(int Id, string Name, DateTime DateOfBirth, string? FavouriteColor);
 
-        private async Task ConfirmAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        private async Task ConfirmAsync(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
         {
             bool pizza = await ctx.ConfirmRequireAsync(ct, "Do you like pizza?", "Sorry, I didn't hear that.");
             bool hotDogs = await ctx.ConfirmRequireAsync(ct, "Do you like hotdogs?", "I can't understand you.");
@@ -121,7 +121,7 @@ namespace Puppet.Cli2
             return;
         }
 
-        private async Task<bool> ConfirmTestAsync(PuppetContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        private async Task<bool> ConfirmTestAsync(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
         {
             bool ok = await ctx.RequestAsync(ct,
                 "Oh uh, you're testing us? Uhm, I guess, what is your favourite colour?",
