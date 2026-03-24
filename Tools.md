@@ -4,13 +4,13 @@
 
 ## CommandBuilder
 
-Command builder is a tool for building commands. It also allows for the definition of `ExecuteJsonAsync` and associated properties, which the default constructor does not.
+`CommandBuilder` is a tool for building commands. It also allows for the definition of `ExecuteJsonAsync` and associated properties, which the default constructor does not.
 
 ### How to use:
 
-Type `using static CCRepl.Tools.CmdBuiler` at the top of a file. `CommandBuilder` can now be accessed with `Cmd(string name)`. Alternatively, every `CommandBuilder` declaration can be written as `CommandBuilder.Command(string name)`. This creates a `CommandBuilder` instance which can be added to with extensions, such as `.Exec()`, `.Usage()` and `.Description()`. One a `CommandBuilder` is complete, use `.Build()` to convert it to a `ReplCommand`.
+Type `using static CCRepl.Tools.CmdBuilder` at the top of a file. `CommandBuilder` can now be used to define a new command with `Cmd(string name)` (alternatively, every `CommandBuilder` declaration can be written as `CommandBuilder.Command(string name)`). This creates a `CommandBuilder` instance which can be added to with extensions, such as `.Exec()`, `.Usage()` and `.Description()`. Once a `CommandBuilder` is complete, use `.Build()` to convert it to a `ReplCommand`.
 
-As every other field for a `ReplCommand` is optional, extention methods can be added only as required. Once a command is defined with a name, and the command set is added to `Repl` on construction, it will be registered and will appear on the `help` list.
+As every other field for a `ReplCommand` is optional, extension methods can be added only as required. Once a command is defined with a name, and the command set is added to `Repl` on construction, it will be registered and will appear on the `help` list.
 
 Here is an example of a command definition using every extension:
 
@@ -22,7 +22,7 @@ public sealed class MyCommandSet : ICommandSet
 {
 	public IReadOnlyList<ReplCommand> Commands =>
 	[
-		Cmd("MyCommand).
+		Cmd("MyCommand").
 			.Aliases("mc", "SampleCommand", "MyCmd")
 			.AddAlias("SampleCmd")
 			.Exec(MyCommandAsync)
@@ -74,7 +74,7 @@ public sealed class MyCommandSet : ICommandSet
 - `Cmd(string name)` should be on its own line.
 - Every extension should be on its own line and indented once.
 - `Build()` should have the same indentation as the `Cmd()` statement.
-- Extentions should be in this general order (identical order to `ReplCommand` constructor).
+- Extensions should be in this general order (identical order to `ReplCommand` constructor).
 - `Children()` or `AddChild()` should always be the last extension used (if defined).
 - Every subcommand definition should have a one-line gap afterwards.
 
@@ -88,7 +88,7 @@ Multiple extensions can also be used on the same line for more compact code.
 
 Arguments are passed to commands through an `IReadOnlyList<string>`, usually called `args`. While individual arguments can be accessed via the index (i.e. `args[i]`), it can become tedious and complicated to implement input validation, exception handling, and the handling of optional arguments. Argument extractor methods make this easier.
 
-All argument extraction methods are extentions of `IReadOnlyList<string>` and take arguments `int index` and `string name`. They are named after the return variable but with the case of the first letter changed (e.g. bool > `Bool()`, double > `Double()`, DateTime > `dateTime()`). Variants can exist (e.g. `Double()`, `DoubleOr()`, `DoubleOrNullable()`, `DoubleOrNull()`. The `index` argument indicates the position of the argument in the `args` list, and the `name` argument is used in error handling for easier bug-fixing.
+All argument extraction methods are extensions of `IReadOnlyList<string>` and take arguments `int index` and `string name`. They are named after the return type but with the case of the first letter changed (e.g. bool > `Bool()`, double > `Double()`, DateTime > `dateTime()`). Variants can exist (e.g. `Double()`, `DoubleOr()`, `DoubleOrNullable()`, `DoubleOrNull()`). The `index` argument indicates the position of the argument in the `args` list, and the `name` argument is used in error handling for easier bug-fixing.
 
 Using index, here is how we would extract the arguments for a command with arguments `<int Id> [DateTime Date] [double Value]`, where no entry for `Date`, or just "_", indicates today, and `Value` is nullable:
 
@@ -97,31 +97,38 @@ Using index, here is how we would extract the arguments for a command with argum
 private Task Execute(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
 {
 	if (args.Count == 0) throw new ReplUserException($"Not enough arguments, missing int 'Id'.");
-	if (!int.TryParse(args[0], out int id) throw new ReplUserException($"Cannot parse int 'Id': '{args[0]}'.");
+	if (!int.TryParse(args[0], out int id)) throw new ReplUserException($"Cannot parse int 'Id': '{args[0]}'.");
 
 	DateTime date;
 	if (args.Count > 1) 
 	{
 		if (args[1] == "_") date = DateTime.Today;
-		if (!DateTime.TryParse(args[1], out date) throw new ReplUserException($"Cannot parse DateTime 'Date': '{args[1]}'.");
+		if (!DateTime.TryParse(args[1], out date)) throw new ReplUserException($"Cannot parse DateTime 'Date': '{args[1]}'.");
 	}
 	else date = DateTime.Today;
 
 	double? value;
-	if (args.Count > 2) if (!double.TryPase(args[2], out value)) throw new ReplUserException($"Cannot parse double `Value`: `{args[2]}`.");
+	if (args.Count > 2)
+	{
+		if (!double.TryParse(args[2], out double v))
+		{
+			throw new ReplUserException($"Cannot parse double 'Value': '{args[2]}'.");
+		}
+		else value = v;
+	}
 	else value = null;
 
 	// ...
 }
 ```
 
-Here is how we can define the same thing it using argument extractor methods:
+Here is how we can define the same thing using argument extractor methods:
 
 ```csharp
-private Task Execute(ReplContext cts, IReadOnlyList<string> args, CancellationToken ct)
+private Task Execute(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
 {
 	int id = args.Int(0, "Id");
-	DateTime date = args.DateTimeOr(0, "Date", DateTime.Today);
+	DateTime date = args.dateTimeOr(1, "Date", DateTime.Today);
 	double? value = args.DoubleOrNull(2, "Value");
 
 	// ...
@@ -132,7 +139,7 @@ Current list of extractor methods are:
 
 - `String()` Returns specified string.
 - `StringOr()` Returns specified string or default if not present.
-- `StringOrNull()`Returns specified string, or null if not present.
+- `StringOrNull()` Returns specified string, or null if not present.
 - `StringOrDefault()` Returns specified string or non-nullable default if not present or equal to '_'.
 - `StringNullableOrDefault()` Returns specified string or nullable default if not present or equal to '_'.
 - `Bool()` Returns specified bool.
@@ -202,7 +209,7 @@ while (!exit)
     }
 
     using CancellationTokenSource cts = new();
-    Task keyWatcher = InputHelpers.ConsoleCancelKeyWatcher(cts);
+    Task keyWatcher = InputHelpers.ConsoleCancelKeyWatcher(cts, ConsoleKey.Escape);
 
     try { await repl.ExecuteAsync(input, cts.Token); }
     catch (OperationCanceledException) { Console.WriteLine("Cancelled."); }
@@ -222,7 +229,7 @@ while (!exit)
 
 ## StringHelpers
 
-`Stringhelpers` is a static class of methods used to help handle strings for printing. Current methods are:
+`StringHelpers` is a static class of methods used to help handle strings for printing. Current methods are:
 
 - `ToSingleLine()` Replaces new lines with spaces.
 - `ToSingleLineNullable()` Previous, but can handle null strings.
@@ -230,7 +237,7 @@ while (!exit)
 - `Truncate()` Truncates string down to a specified length.
 - `TruncateNullable()` Previous, but can handle null strings.
 - `ToStringTruncate()` Truncates double or int down to a specified length.
-- `Checked()` Represent bool as a string, default is True > `[x]`, False > `[ ]`.
+- `Checked()` Represents bool as a string, default is True > `[x]`, False > `[ ]`.
 - `AlignList()` Align items of a list.
 - `ToBox()` Returns a multiline string of input string enclosed in a box made with characters `┌` `┐` `└` `┘` `│` `─`.
 - `ToDoubleBox()` Previous, but uses characters `╔` `╗` `╚` `╝` `║` `═`.

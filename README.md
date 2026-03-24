@@ -1,5 +1,5 @@
 # CCRepl
-CCRepl is a  C# class library for building REPL-style command systems. Commands are registered as a hierarchical tree, and can be executed via external string input, directly within the program, or by running scripts.
+CCRepl is a C# class library for building REPL-style command systems. Commands are registered as a hierarchical tree, and can be executed via external string input, directly within the program, or by running scripts.
 
 ## Overview
 CCRepl is designed to quickly and easily create interactive command environments, scripts, and automation tools.
@@ -27,16 +27,16 @@ Commands are added by defining `ReplCommand` objects inside command sets impleme
 To set up a CCRepl command system:
 
 1. Create the `Repl` object, assigning command sets as constructor parameters (these can be left blank initially). 
-1. Assign `ReqWriteLine` and `ReqWrite`.
-2. Assign `ReqInputAsync` handler.
-3. Create input loop.
+2. Assign `ReqWriteLine` and `ReqWrite`.
+3. Assign `ReqInputAsync` handler.
+4. Create input loop.
 
 Here is an example for a simple console app:
 
 ```csharp
 using CCRepl;
 
-// Define Repl object, assign commandsets:
+// Define Repl object, assign command sets:
 Repl repl = new(
 	new MyCommands(),
 	// ...
@@ -69,7 +69,7 @@ using CCRepl;
 using CCRepl.Tools;
 
 Repl repl = new(...);
-repl.ReqWriteLine += mgs => Console.WriteLine(msg);
+repl.ReqWriteLine += msg => Console.WriteLine(msg);
 repl.ReqWrite += msg => Console.Write(msg);
 
 List<string> history = [];
@@ -81,7 +81,7 @@ repl.ReqInputAsync = async (prompt, ct) =>
 	ConsoleResult result = await editor.ReadLineAsync(ct);
 	if (result.Cancelled) throw new OperationCanceledException(ct);
 	return result.Text;
-}
+};
 
 bool exit = false;
 
@@ -126,12 +126,12 @@ public class MyCommands : ICommandSet
 {
 	public IReadOnlyList<ReplCommand> Commands =>
 	[
-		new(name "MyCommand"
+		new(name: "MyCommand",
 			executeAsync: MyCommandAsync
 		)
 	];
 
-	private Task MyCommandAsync(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+	private async Task MyCommandAsync(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
 	{
 		// ...
 	}
