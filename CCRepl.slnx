@@ -9,8 +9,8 @@
     <File Path="README.md" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="Puppet.Cli2/CCRepl.Cli2.csproj" Id="9380d8ea-3ddc-4be0-8487-a96c2e2394e4" />
-    <Project Path="src/Puppet.Cli/CCRepl.Cli.csproj" />
-    <Project Path="src/Puppet/CCRepl.csproj" />
+    <Project Path="src/CCRepl.Cli2/CCRepl.Cli2.csproj" Id="9380d8ea-3ddc-4be0-8487-a96c2e2394e4" />
+    <Project Path="src/CCRepl.Cli/CCRepl.Cli.csproj" />
+    <Project Path="src/CCRepl/CCRepl.csproj" />
   </Folder>
 </Solution>
