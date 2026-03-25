@@ -121,8 +121,8 @@ namespace CCRepl.Tools
                             continue;
                         }
                         string submit = _sb.ToString();
-                        ClearRenderedLine();
-                        //Console.WriteLine();
+                        //ClearRenderedLine();
+                        Console.WriteLine();
                         if (!string.IsNullOrWhiteSpace(submit)) AddToHistory(submit);
                         return ConsoleResult.Submit(submit.Replace('¶', '\n'));
                     case ConsoleKey.Backspace:

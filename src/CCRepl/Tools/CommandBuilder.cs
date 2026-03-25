@@ -28,6 +28,7 @@ namespace CCRepl.Tools
         private string? _usage;
         private string? _description;
         private string? _longDescription;
+        private string? _group;
         private string? _remarks;
 
         public CommandBuilder(string name)
@@ -48,6 +49,7 @@ namespace CCRepl.Tools
                 description:        _description,
                 longDescription:    _longDescription,
                 remarks:            _remarks,
+                group:           _group,
                 children:           _children
             )
             {
@@ -127,6 +129,12 @@ namespace CCRepl.Tools
         }
 
         public CommandBuilder ExampleAdd(string example) => AddExample(example);
+
+        public CommandBuilder Group(string group)
+        {
+            _group = group;
+            return this;
+        }
 
         public CommandBuilder Remarks(string remarks)
         {

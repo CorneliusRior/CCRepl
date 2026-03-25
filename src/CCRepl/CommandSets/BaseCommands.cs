@@ -28,19 +28,22 @@ Help command on its own lists all commands and descriptions. If there is one arg
 Help attirbutes include: Aliases, Usage, Description, Examples, LongDescription.
 Otherwise, if it cannot be parsed as an attribute, it will interpret the argument as a CommandHead, and will show full help for all commands with those CommandHead elements.
 If two arguments are given, the first argument will be interpreted as a Help Attribute, and the second argument will be interpreted as a CommandHead.",
+            group: "Base",
             children:
             [
                 new ReplCommand(
                     name: "List",
                     executeAsync: HelpListAsync,
                     usage: "list [string HelpAttribute] [string CommandHeads]",
-                    description: "List all commands and specified help attribute (description by default), or just for all commands with specified CommandHeads."
+                    description: "List all commands and specified help attribute (description by default), or just for all commands with specified CommandHeads.",
+                    group: "Base"
                 ),
                 new ReplCommand(
                     name: "Full",
                     executeAsync: HelpFullAsync,
                     usage: "Help.Full [string CommandHeads]",
-                    description: "Show full help for all commands, or all commands with specified CommandHeads."
+                    description: "Show full help for all commands, or all commands with specified CommandHeads.",
+                    group: "Base"
                 )
             ]            
         ),
@@ -50,13 +53,15 @@ If two arguments are given, the first argument will be interpreted as a Help Att
             executeAsync: CommandsAsync,
             aliases: ["CommandList", "cmd", "Command"],
             description: "List all commands",
+            group: "Base",
             children:
             [
                 new ReplCommand(
                     name: "Aliases",
                     executeAsync: CommandAliasesAsync,
                     aliases: ["All"],
-                    description: "Lists all commands and aliases for each command."
+                    description: "Lists all commands and aliases for each command.",
+                    group: "Base"
                 )
             ]
         ),
@@ -65,26 +70,31 @@ If two arguments are given, the first argument will be interpreted as a Help Att
             name: "Test",
             executeAsync: TestAsync,
             usage: "Tast <Command> (arguments ... )",
-            description: "Runs the TestAsync method on specified command with specified arguments."
+            description: "Runs the TestAsync method on specified command with specified arguments.",
+            group: "Base"
         ),
 
-        Cmd("Json").Description("Commands for manual use of Json Commands").Children(
+        Cmd("Json").Description("Commands for manual use of Json Commands").Group("Base").Children(
             Cmd("Run").Exec(RunJson).Description("Run a Json Command")
                 .Usage("Json.Run <string CommandHead>")
+                .Group("Base")
                 .Build(),
             Cmd("Test").Exec(TestJson).Description("Tests a JsonCommand")
                 .Usage("Json.Test <string CommandHead>")
+                .Group("Base")
                 .Build()
         ).Build(),
 
-        Cmd("Script").Description("Commands for running scripts.").Children(
+        Cmd("Script").Description("Commands for running scripts.").Group("Base").Children(
             Cmd("Run").Exec(ScriptTestAndRunAsync).Description("Runs a script from a file path. Tests first.")
                 .Usage("Script.Run <string FilePath>")
+                .Group("Base")
                 .Children(
                     Cmd("Force").Exec(ScriptRunAsync).Description("Runs a script from a file path without testing first.").Build()
                 ).Build(),
             Cmd("Test").Exec(ScriptTestAsync).Description("Tests a script from a file path.")
                 .Usage("Script.Test <string FilePath>")
+                .Group("Base")
                 .Build()
         ).Build()
     ];   

@@ -26,11 +26,14 @@ public class ReplCommand
 
     public Type? JsonPayloadType { get; init; }
 
-
+    // Help attributes:
     public string? Usage { get; init; }
     public string? Description { get; init; }
     public IReadOnlyList<string> Examples { get; init; }
     public string? LongDescription { get; init; }
+
+    // Other:
+    public string? Group { get; init; }
     public string? Remarks { get; init; } // You can just put whatever you want here, not used.
 
     [SetsRequiredMembers]
@@ -45,6 +48,7 @@ public class ReplCommand
         string? description = null,
         IReadOnlyList<string>? examples = null,
         string? longDescription = null,
+        string? group = null,
         string? remarks = null,
         IReadOnlyList<ReplCommand>? children = null
     )
@@ -60,6 +64,7 @@ public class ReplCommand
         Examples = examples ?? Array.Empty<string>();
         LongDescription = longDescription;
         Remarks = remarks;
+        Group = group;
         Children = children ?? Array.Empty<ReplCommand>();
     }
 
