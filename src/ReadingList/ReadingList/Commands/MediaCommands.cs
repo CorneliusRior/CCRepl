@@ -43,8 +43,9 @@ namespace ReadingList.Commands
                         .Build(),
 
                     Cmd("List")
+                        .Aliases("l", "ls", "lst", "PrintAll", "Table", "tbl", "ReadingList")
+                        .Exec(MediaList)
                         .Description("Lists all added media items.")
-                        .Exec(NotImplemented)
                         .Children
                         (
                             Cmd("SortBy")
@@ -56,8 +57,10 @@ namespace ReadingList.Commands
                         .Build(),
 
                     Cmd("Show")
+                        .Aliases("shw", "View", "vw", "v")
+                        .Exec(MediaShow)
+                        .Usage("Media.Show <int Id>")
                         .Description("Shows all information for a particular media item.")
-                        .Exec(NotImplemented)
                         .Build(),
 
                     Cmd("Search")
@@ -101,8 +104,10 @@ namespace ReadingList.Commands
                         .Build(),
 
                     Cmd("Delete")
+                        .Aliases("d", "del", "rm", "Remove", "Erase")
+                        .Exec(Delete)
+                        .Usage("Media.Delete <int Id>")
                         .Description("Deletes a media item from the list.")
-                        .Exec(NotImplemented)
                         .Build()
 
                 )

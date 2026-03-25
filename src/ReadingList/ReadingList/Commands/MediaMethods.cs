@@ -60,5 +60,34 @@ namespace ReadingList.Commands
 
             ctx.WriteLine($"Added entry #{_service.GetLastId()}");
         }
+
+        private Task MediaList(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            List<Media> readingList = _service.GetAll();
+            List<string?[]> stringList = new();
+            foreach (Media m in readingList) stringList.Add(m.Items);
+            PrintTable table = Media.GetTable();
+            table.AddItems(stringList);
+            ctx.WriteLine("Printing list.");
+            ctx.WriteLine(table.Print());
+            return Task.CompletedTask;
+        }
+
+        private Task MediaShow(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            int id = args.Int(0, "Id");
+            Media entry = _service.GetById(id);
+            ctx.WriteLine(entry.PrintInfo());
+            return Task.CompletedTask;
+        }
+
+        private async Task Delete(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            int id = args.Int(0, "Id");
+            Media entry = _service.GetById(id);
+            bool conf = await ctx.ConfirmAsync(ct, $"Delete entry #{id}: '{entry.Title}'? (Y/N): ", false);
+            if (conf) _service.Delete(id);
+            ctx.WriteLine($"Deleted entry #{id}");
+        }
     }
 }

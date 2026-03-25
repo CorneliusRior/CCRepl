@@ -29,6 +29,24 @@
                 _ => throw new ArgumentOutOfRangeException()
             };
 
+        /// <summary>
+        /// Present tense verb, i.e., "reading", "watching", "playing".        
+        /// </summary>
+        /// <remarks>Could expand to include other tenses, capitalization maybe?</remarks>
+        public static string ToVerb(this MediaType input) =>
+            input switch
+            {
+                MediaType.Book      => "reading",  
+                MediaType.Film      => "watching",  
+                MediaType.Show      => "watching",   
+                MediaType.Game      => "playing",  
+                MediaType.Album     => "listening",   
+                MediaType.Song      => "listening",
+                MediaType.Podcast   => "listening",
+                MediaType.Other     => "",
+                _ => throw new ArgumentOutOfRangeException()
+            };
+
         public static MediaType ToMediaType(this string input) =>
             input.Trim().ToLowerInvariant() switch
             {
@@ -91,21 +109,21 @@
     {
         public static string MediaStatusList => "'Planned', 'InProgress', 'Completed', 'Dropped', 'Paused', 'AwaitingNew', and 'Other'";
 
-        public static string ToString(this MediaStatus input) =>
+        public static string ToDisplayString(this MediaStatus input) =>
             input switch
             {
                 MediaStatus.Planned     => "Planned",
-                MediaStatus.InProgress  => "InProgress",
+                MediaStatus.InProgress  => "In Progress",
                 MediaStatus.Completed   => "Completed",
                 MediaStatus.Dropped     => "Dropped",
                 MediaStatus.Paused      => "Paused",
-                MediaStatus.AwaitingNew => "AwaitingNew",
+                MediaStatus.AwaitingNew => "Awaiting New",
                 MediaStatus.Other       => "Other",
                 _ => throw new ArgumentOutOfRangeException()
-            };
+            };        
 
         public static MediaStatus ToMediaStatus(this string input) =>
-            input.Trim().ToLowerInvariant() switch
+            input.Trim().ToLowerInvariant().Replace(" ", "") switch
             {
                 // Canonical:
                 "planned"       => MediaStatus.Planned,

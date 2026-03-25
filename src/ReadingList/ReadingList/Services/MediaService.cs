@@ -185,7 +185,7 @@ namespace ReadingList.Services
         {
             using SqliteConnection conn = new(_connString);
             conn.Open();
-            string sql = "DELETE * FROM ReadingList WHERE Id = $id";
+            string sql = "DELETE FROM ReadingList WHERE Id = $id";
             using SqliteCommand cmd = new(sql, conn);
             cmd.Parameters.AddWithValue("$id", id);
             cmd.ExecuteNonQuery();
