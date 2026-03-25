@@ -19,7 +19,7 @@ repl.ReqWrite += msg => Console.Write(msg);
 repl.ReqWriteLine += msg => Console.WriteLine(msg);
 repl.ReqInputAsync = async (prompt, ct) =>
 {
-    Console.Write(prompt);
+    Console.WriteLine(prompt);
     ConsoleInputEditor editor = new("> ", history);
     ConsoleResult result = await editor.ReadLineAsync(ct);
     if (result.Cancelled) throw new OperationCanceledException(ct);

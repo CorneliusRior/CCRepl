@@ -19,17 +19,24 @@ namespace ReadingList.Commands
         public IReadOnlyList<ReplCommand> Commands =>
         [
             Cmd("Media")
+                .Aliases("m", "md", "Read", "ReadingList", "rd", "rdl")
                 .Description("Commands for interacting with media items.")
                 .Children
                 (
                     Cmd("Add")
+                        .Aliases("a", "+", "New", "nw", "AddNew")
+                        .Exec(MediaAdd)
+                        .Usage("Media.Add <string Title> <string Type> <string Status> [int Release Year] [string Genre] [DateTime StartedOn] [DateTime FinishedOn] [string ProgressNote] [string Notes] [double Rating]")
                         .Description("Add a new piece of media to the list.")
-                        .Exec(NotImplemented)
+                        .AddExample("Media.Add Thunderbirds Show InProgress 1965 _ \"Gerry Anderson\" 07-03-2026 _ \"Episode 23\" _ 10")
+                        .AddExample("Media.Add \"Moby Dick\" Book Dropped 1851 _ \"Herman Melville\" _ _ _ \"Gave up, too boring, not as good as Thunderbirds (1965)\" 2.5")
+                        .AddExample("m.+ \"Romance of the Three Kingdoms\" Book InProgress _ Romance \"Attributed to Luo GuangZhong\" 01-01-2026 _ \"Chapter 64\"")                        
                         .Children
                         (
                             Cmd("Prompt")
+                                .Aliases("p", "pmpt", "pmt", "async")
                                 .Description("Adds a new piece of media through input prompts.")
-                                .Exec(NotImplemented)
+                                .Exec(MediaAddPrompt)
                                 .Build()
 
                         )

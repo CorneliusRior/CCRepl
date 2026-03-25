@@ -47,9 +47,10 @@ namespace CCRepl.Tools
                 aliases:            _aliases,
                 usage:              _usage,
                 description:        _description,
+                examples:           _examples,
                 longDescription:    _longDescription,
+                group:              _group,
                 remarks:            _remarks,
-                group:           _group,
                 children:           _children
             )
             {

@@ -126,6 +126,18 @@ namespace ReadingList.Services
             
         }
 
+        // Get Last ID:
+        public int GetLastId()
+        {
+            using SqliteConnection conn = new(_connString);
+            conn.Open();
+            string sql = "SELECT Id FROM ReadingList ORDER BY Id DESC LIMIT 1";
+            using SqliteCommand cmd = new(sql, conn);
+            SqliteDataReader reader = cmd.ExecuteReader();
+            if (!reader.Read()) throw new IndexOutOfRangeException();
+            return reader.GetInt32(0);
+        }
+
         // Update
         public void Update(Media item)
         {

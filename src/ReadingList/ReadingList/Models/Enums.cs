@@ -14,6 +14,7 @@
 
     public static class MediaTypeExt
     {
+        public static string MediaTypeList => "'Book', 'Film', 'Show', 'Game', 'Album', 'Song', Podcast', and 'Other'";
         public static string ToString(this MediaType input) =>
             input switch
             {
@@ -88,6 +89,8 @@
 
     public static class MediaStatusExt
     {
+        public static string MediaStatusList => "'Planned', 'InProgress', 'Completed', 'Dropped', 'Paused', 'AwaitingNew', and 'Other'";
+
         public static string ToString(this MediaStatus input) =>
             input switch
             {

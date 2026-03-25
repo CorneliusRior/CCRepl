@@ -295,6 +295,20 @@ public static class ArgumentHelpers
         return v;
     }
 
+    /// <summary>
+    /// Returns specified DateTime from a list of arguments, returns nullable fallback if not present or equal to '_' and exception if cannot parse.
+    /// </summary>
+    /// <param name="index">Position of desired argument in "args"</param>
+    /// <param name="name">Assigned name for string, included in exception message</param>
+    /// <param name="fallBack">Nullable default return value</param>
+    public static DateTime? dateTimeOrNullable(this IReadOnlyList<string> args, int index, string name, DateTime? fallBack)
+    {
+        if (index >= args.Count) return fallBack;
+        if (args[index] == "_") return fallBack;
+        if (!DateTime.TryParse(args[index], out DateTime v)) throw new ReplUserException($"Cannot parse DateTime '{name}': .{args[index]}'.");
+        return v;
+    }
+
     public static bool ParseConfirmation(this string input, bool? fallBack = null)
     {
         string[] yesString = ["yes", "y", "affirmative", "1", "true", "+"];
