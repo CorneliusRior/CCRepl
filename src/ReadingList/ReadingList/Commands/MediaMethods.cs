@@ -81,6 +81,147 @@ namespace ReadingList.Commands
             return Task.CompletedTask;
         }
 
+        private Task MediaStatus(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            int id = args.Int(0, "Id");
+            string statusStr = args.String(1, "Status");
+            if (!statusStr.TryToMediaStatus(out MediaStatus status)) throw new ReplUserException($"Could not parse status '{statusStr}', available statuses are: {MediaStatusExt.MediaStatusList}.");
+            
+            Media entry = _service.GetById(id);
+            entry.Status = status;
+            _service.Update(entry);
+
+            ctx.WriteLine($"Set status for entry {entry.PrintRef()} to '{entry.Status.ToString()}'.");
+            return Task.CompletedTask; 
+        }
+
+        private Task MediaSetStatusPlanned(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct) => MediaSetStatus(ctx, args.Int(0, "Id"), Models.MediaStatus.Planned);
+
+        private Task MediaSetStatusInProgress(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct) => MediaSetStatus(ctx, args.Int(0, "Id"), Models.MediaStatus.InProgress);
+
+        private Task MediaSetStatusCompleted(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct) => MediaSetStatus(ctx, args.Int(0, "Id"), Models.MediaStatus.Completed);
+
+        private Task MediaSetStatusDropped(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct) => MediaSetStatus(ctx, args.Int(0, "Id"), Models.MediaStatus.Dropped);
+
+        private Task MediaSetStatusPaused(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct) => MediaSetStatus(ctx, args.Int(0, "Id"), Models.MediaStatus.Paused);
+
+        private Task MediaSetStatusAwaitingNew(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct) => MediaSetStatus(ctx, args.Int(0, "Id"), Models.MediaStatus.AwaitingNew);
+
+        private Task MediaSetStatusOther(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct) => MediaSetStatus(ctx, args.Int(0, "Id"), Models.MediaStatus.Other);
+
+        private Task MediaSetStatus(ReplContext ctx, int id, MediaStatus status)
+        {
+            Media entry = _service.GetById(id);
+            entry.Status = status;
+            _service.Update(entry);
+            ctx.WriteLine($"Set status for entry {entry.PrintRef()} to '{entry.Status.ToString()}'.");
+            return Task.CompletedTask;
+        }
+
+        private async Task MediaRate(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            int id = args.Int(0, "Id");
+            double rating = args.Double(1, "Rating");
+            Media entry = _service.GetById(id);
+
+            if (rating > 10)
+            {
+                ctx.WriteLine("The rating is meant to be out of ten, was it really better than that?");
+                bool yes = await ctx.ConfirmAsync(ct);
+                if (!yes) return;
+            }
+            if (rating < 0)
+            {
+                ctx.WriteLine("The rating is meant to be out of ten, given number is negative, was it really that bad?");
+                bool yes = await ctx.ConfirmAsync(ct);
+                if (!yes) return;
+            }
+            entry.Rating = rating;
+            _service.Update(entry);
+            ctx.WriteLine($"Set rating for {entry.PrintRef()} to {rating}/10");
+        }
+
+        private async Task MediaNote(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            int id = args.Int(0, "Id");
+            string? note = args.StringOrNull(1, "Note");
+            Media entry = _service.GetById(id);
+
+            if (note is null)
+            {
+                ctx.WriteLine(entry.PrintRef());
+                ctx.WriteLine($"Notes: " + (entry.Notes ?? "(none)"));
+                ctx.WriteLine();
+                note = await ctx.ReadLineAsync($"Add note to {entry.PrintRef()}: ", ct);
+            }
+
+            if (string.IsNullOrWhiteSpace(note))
+            {
+                ctx.Write("Empty string, returning.");
+                return;
+            }
+
+            if (entry.Notes is null || string.IsNullOrWhiteSpace(entry.Notes)) entry.Notes = note;
+            else entry.Notes = entry.Notes + $"\n\n(Appended at {DateTime.Now.ToString("g")}):\n" + note;
+
+            _service.Update(entry);
+            ctx.WriteLine("Edited:");
+            ctx.WriteLine(entry.PrintInfo());
+        }
+
+        private async Task MediaNoteOverride(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            int id = args.Int(0, "Id");
+            string? note = args.StringOrNull(1, "Note");
+            Media entry = _service.GetById(id);
+
+            if (note is null)
+            {
+                ctx.WriteLine(entry.PrintRef());
+                ctx.WriteLine($"Notes: " + (entry.Notes ?? "(none)"));
+                ctx.WriteLine();
+                note = await ctx.ReadLineAsync($"Override note to {entry.PrintRef()}: ", ct);
+            }
+
+            if (string.IsNullOrWhiteSpace(note))
+            {
+                ctx.Write("Empty string, returning.");
+                return;
+            }
+
+            entry.Notes = note;
+            _service.Update(entry);
+            ctx.WriteLine("Edited:");
+            ctx.WriteLine(entry.PrintInfo());
+        }
+
+        private async Task MediaNoteAppend(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            int id = args.Int(0, "Id");
+            string? note = args.StringOrNull(1, "Note");
+            Media entry = _service.GetById(id);
+
+            if (note is null)
+            {
+                ctx.WriteLine(entry.PrintRef());
+                ctx.WriteLine($"Notes: " + (entry.Notes ?? "(none)"));
+                ctx.WriteLine();
+                note = await ctx.ReadLineAsync($"Append note to {entry.PrintRef()}: ", ct);
+            }
+
+            if (string.IsNullOrWhiteSpace(note))
+            {
+                ctx.Write("Empty string, returning.");
+                return;
+            }
+
+            entry.Notes = entry.Notes + $"\n\n(Appended at {DateTime.Now.ToString("g")}):\n" + note;
+
+            _service.Update(entry);
+            ctx.WriteLine("Edited:");
+            ctx.WriteLine(entry.PrintInfo());
+        }
+
         private async Task Delete(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
         {
             int id = args.Int(0, "Id");

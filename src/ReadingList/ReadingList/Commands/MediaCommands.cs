@@ -5,6 +5,7 @@ using CCRepl.CommandSets;
 using CCRepl;
 using ReadingList.Services;
 using System.Runtime.CompilerServices;
+using ReadingList.Models;
 
 namespace ReadingList.Commands
 {    
@@ -73,32 +74,89 @@ namespace ReadingList.Commands
                         .Build(),
 
                     Cmd("Status")
+                        .Aliases("s", "st", "stat", "sts", "state")
+                        .Exec(MediaStatus)
+                        .Usage("Media.Status <int Id> <string Status>")
                         .Description("Set media status for a media item.")
-                        .Exec(NotImplemented)
+                        .LongDescription($"Sets media status for a media item to the specified status. Available statuses are: {MediaStatusExt.MediaStatusList}.")
                         .Children
                         (
+                            Cmd("Planned")
+                                .Aliases("Plan", "pln", "plnd", "Future", "ft", "ftr")
+                                .Exec(MediaSetStatusPlanned)
+                                .Usage("Media.Status.Planned <int Id>")
+                                .Description("Set media status for specified media item as \"Planned\".")
+                                .Build(),
 
+                            Cmd("InProgress")
+                                .Aliases("inp", "prg", "Progress", "prog", "Current", "Present")
+                                .Exec(MediaSetStatusInProgress)
+                                .Usage("Media.Status.InProgress <int Id>")
+                                .Description("Set media status for specified media item as \"InProgress\".")
+                                .Build(),
+                            
+                            Cmd("Completed")
+                                .Aliases("c", "cplt", "Complete", "Finished", "Finish", "Done", "Read", "Watched")
+                                .Exec(MediaSetStatusCompleted)
+                                .Usage("Media.Status.Completed <int Id>")
+                                .Description("Set media status for specified media item as \"Completed\".")
+                                .Build(),
+
+                            Cmd("Dropped")
+                                .Aliases("d", "drp", "drpd", "GiveUp", "GiveIn", "Abandoned")
+                                .Exec(MediaSetStatusDropped)
+                                .Usage("Media.Status.Dropped <int Id>")
+                                .Description("Set media status for specified media item as \"Dropped\".")
+                                .Build(),
+
+                            Cmd("Paused")
+                                .Aliases("psd", "Break", "brk")
+                                .Exec(MediaSetStatusPaused)
+                                .Usage("Media.Status.Paused <int Id>")
+                                .Description("Set media status for specified media item as \"Paused\".")
+                                .Build(),
+
+                            Cmd("AwaitingNew")
+                                .Aliases("a", "an", "Awaiting", "Waiting", "wtn")
+                                .Exec(MediaSetStatusAwaitingNew)
+                                .Usage("Media.Static.AwaitingNew <int Id>")
+                                .Description("Set media status for specified media item as \"AwaitingNew\".")
+                                .Build(),
+
+                            Cmd("Other")
+                                .Exec(MediaSetStatusOther)
+                                .Usage("Media.Status.Other <int Id>")
+                                .Description("Set media status for specified media item as \"Other\".")
+                                .Build()
                         )
                         .Build(),
 
                     Cmd("Rate")
+                        .Aliases("r", "rt", "judge")
+                        .Exec(MediaRate)
                         .Description("Rate a piece of media out of 10.")
-                        .Exec(NotImplemented)
                         .Build(),
 
                     Cmd("Note")
+                        .Aliases("n", "Notes", "nt")
+                        .Exec(MediaNote)
+                        .Usage("Media.Note <int Id> [string Note]")
                         .Description("Add a note to a piece of media if none exists")
-                        .Exec(NotImplemented)
+                        .LongDescription("Will check if there is a note for Id, if there is one, will append, if not, will set (override). If argument \"Note\" is not given, will be prompted.")
                         .Children
                         (
                             Cmd("Override")
+                                .Aliases("o", "ovr", "ovrd", "Replace", "Rplc")
+                                .Exec(MediaNoteOverride)
+                                .Usage("Media.Note.Override <int Id> [string Note]")
                                 .Description("Sets note, overriding any existing notes.")
-                                .Exec(NotImplemented)
                                 .Build(),
                             
                             Cmd("Append")
+                                .Aliases("a", "app", "apnd", "add")
+                                .Exec(MediaNoteAppend)
+                                .Usage("Media.Note.Append <int Id> [string Note]")
                                 .Description("Appends text to the end of a note.")
-                                .Exec(NotImplemented)
                                 .Build()
                         )
                         .Build(),

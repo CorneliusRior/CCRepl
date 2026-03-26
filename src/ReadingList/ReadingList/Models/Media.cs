@@ -59,18 +59,7 @@ namespace ReadingList.Models
         }
 
         // Print variables/functions:
-        /*
-        public string PrintInfo() =>
-            $"[#{Id}] '{Title}' {(ReleaseYear is null ? "" : $"({ReleaseYear})")} Status: {Status.ToString()}\n" +
-            $"Genre: {Genre ?? "(unspecified)"}, Creator: {Creator ?? "(unspecified)"}\n" +
-            StartedOn is null ? "" : $"Started {Type.ToVerb()} on {StartedOn!.Value.ToString("g")}. " +
-            CompletedOn is null ? "" : $"Finished {Type.ToVerb()} on {CompletedOn!.Value.ToString("g")}." +
-            ((StartedOn is null && CompletedOn is null) ? "" : "\n") +
-            ProgressNote is null ? "" : $"Progress: {ProgressNote}\n" +
-            $"Notes: {Notes ?? "(none)"}\n" +
-            $"Rating: {(Rating is null ? "-" : Rating.Value.ToString("0.#"))}/10\n" +
-            $"(Added: {AddedOn.ToString("g")}. Last Updated: {LastUpdated.ToString("g")})"
-            ;*/
+        public string PrintRef() => $"#{Id} '{Title}' {(ReleaseYear is not null ? $"({ReleaseYear})" : "")}";
         public string PrintInfo()
         {
             StringBuilder sb = new();
