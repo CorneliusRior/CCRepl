@@ -2,6 +2,7 @@
 using CCRepl.Models;
 using CCRepl.Tools;
 using ReadingList.Models;
+using System.Text;
 
 namespace ReadingList.Commands
 {
@@ -63,7 +64,10 @@ namespace ReadingList.Commands
 
         private Task MediaList(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
         {
-            List<Media> readingList = _service.GetAll();
+            string sortKey = args.StringOr(0, "SortBy", "Id");
+
+            List<Media> readingList = SortBy(_service.GetAll(), sortKey);
+
             List<string?[]> stringList = new();
             foreach (Media m in readingList) stringList.Add(m.Items);
             PrintTable table = Media.GetTable();
@@ -73,11 +77,68 @@ namespace ReadingList.Commands
             return Task.CompletedTask;
         }
 
+        private List<Media> SortBy(List<Media> list, string sortKey)
+        {
+            return sortKey.Trim().ToLowerInvariant() switch
+            {
+                "id"        => list.OrderBy(m => m.Id).ToList(),
+                "title"     => list.OrderBy(m => m.Title).ToList(),
+                "type"      => list.OrderBy(m => m.Type).ToList(),
+                "status"    => list.OrderBy(m => m.Status).ToList(),
+                "year"      => list.OrderByDescending(m => m.ReleaseYear).ToList(),
+                "genre"     => list.OrderBy(m => m.Genre).ToList(),
+                "creator"   => list.OrderBy(m => m.Creator).ToList(),
+                "rating"    => list.OrderByDescending(m => m.Rating).ToList(),
+                "started"   => list.OrderByDescending(m => m.StartedOn).ToList(),
+                "completed" => list.OrderByDescending(m => m.CompletedOn).ToList(),
+                "added"     => list.OrderByDescending(m => m.AddedOn).ToList(),
+                "updated"   => list.OrderByDescending(m => m.LastUpdated).ToList(),
+
+                // Aliases:
+                "name"          => list.OrderBy(m => m.Title).ToList(),
+                "released"      => list.OrderByDescending(m => m.ReleaseYear).ToList(),
+                "releaseyear"   => list.OrderByDescending(m => m.ReleaseYear).ToList(),
+                "by"            => list.OrderBy(m => m.Creator).ToList(),
+                "startdate"     => list.OrderByDescending(m => m.StartedOn).ToList(),
+                "startedon"     => list.OrderByDescending(m => m.StartedOn).ToList(),
+                "completeddate" => list.OrderByDescending(m => m.CompletedOn).ToList(),
+                "completedon"   => list.OrderByDescending(m => m.CompletedOn).ToList(),
+                "addeddate"     => list.OrderByDescending(m => m.AddedOn).ToList(),
+                "addedon"       => list.OrderByDescending(m => m.AddedOn).ToList(),
+                "updateddate"   => list.OrderByDescending(m => m.LastUpdated).ToList(),
+                "lastupdated"   => list.OrderByDescending(m => m.LastUpdated).ToList(),
+                _ => throw new ReplUserException($"Unknown sort type '{sortKey}', available sort types are: 'Id', 'Title', 'Type', 'Status', 'Genre', 'Year', 'Creator', 'Rating', 'Started', 'Completed', 'Added' and 'Updated'.")
+            };
+        }
+
         private Task MediaShow(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
         {
             int id = args.Int(0, "Id");
             Media entry = _service.GetById(id);
             ctx.WriteLine(entry.PrintInfo());
+            return Task.CompletedTask;
+        }
+
+        private Task MediaSearch(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            string searchKey = args.String(0, "Search Key");
+            string sortKey = args.StringOr(1, "SortBy", "Id");
+            if (string.IsNullOrWhiteSpace(searchKey))
+            {
+                ctx.WriteLine($"Please add search key, usage: Media.Search <string SearchKey>");
+                return Task.CompletedTask;
+            }
+
+            List<Media> full = _service.GetAll();
+            List<Media> filt = full.Where(m => m.SearchExpression.Contains(searchKey, StringComparison.OrdinalIgnoreCase)).ToList();
+            filt = SortBy(filt, sortKey);
+
+            List<string?[]> stringList = new();
+            foreach (Media m in filt) stringList.Add(m.Items);
+            PrintTable table = Media.GetTable();
+            table.AddItems(stringList);
+            ctx.WriteLine($"Printing all items containing '{searchKey}':");
+            ctx.WriteLine(table.Print());
             return Task.CompletedTask;
         }
 
@@ -230,5 +291,64 @@ namespace ReadingList.Commands
             if (conf) _service.Delete(id);
             ctx.WriteLine($"Deleted entry #{id}");
         }
+
+        private Task StatsSummary(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            List<Media> readingList = _service.GetAll();
+            StatSummary stats = GenerateStatSummary(readingList);
+            if (readingList.Count == 0) ctx.WriteLine("No items added to reading list.");
+            else
+            {
+                StringBuilder sb = new();
+                sb.AppendLine($"You have {stats.Count} item{(stats.Count == 1 ? "" : "s")} in your reading list:");                
+                foreach (var t in stats.TypeList)
+                {
+                    if (t.Value.Count > 0)
+                    {
+                        sb.AppendLine();
+                        sb.AppendLine($" -- {t.Value.Count} {t.Key.ToDisplayString()}{(t.Value.Count == 1 ? "" : "s")}: --");
+                        sb.AppendLine($"The {t.Key.ToVerb()} of which is:");
+                        foreach (MediaStatus status in Enum.GetValues(typeof(MediaStatus)))
+                        {
+                            int count = t.Value.Where(m => m.Status == status).Count();
+                            if (count > 0) sb.AppendLine($" - {count} {status.ToDisplayString()} ({((double)count / (double)t.Value.Count * 100).ToString("0.#")}%)");
+                        }
+
+                        List<Media> rated = t.Value.Where(m => m.Rating.HasValue).ToList();
+                        if (rated.Count == 0) sb.AppendLine("\tNone of which are rated.");
+                        else
+                        {
+                            sb.AppendLine($"{rated.Count}/{t.Value.Count} of which are rated ({((double)rated.Count / (double)t.Value.Count * 100).ToString("0.#")}%), with an average rating of {rated.Average(m => m.Rating)!.Value.ToString("0.#")}/10.");
+                        }
+                    }
+                }
+                sb.AppendLine();
+
+                ctx.WriteLine(sb.ToString());
+            }
+            
+            return Task.CompletedTask;
+        }
+
+        private StatSummary GenerateStatSummary(List<Media> list)
+        {
+            int count = list.Count;
+
+            Dictionary<MediaType, List<Media>> typeList = new();
+            foreach (MediaType type in Enum.GetValues(typeof(MediaType)))
+            {
+                typeList.Add(type, list.Where(m => m.Type == type).ToList());
+            }
+
+            Dictionary<MediaStatus, List<Media>> statusList = new();
+            foreach (MediaStatus status in Enum.GetValues(typeof(MediaStatus)))
+            {
+                statusList.Add(status, list.Where(m => m.Status == status).ToList());
+            }
+
+            return new StatSummary(count, typeList, statusList);
+        }
+
+        private sealed record StatSummary(int Count, Dictionary<MediaType, List<Media>> TypeList, Dictionary<MediaStatus, List<Media>> StatusList);
     }
 }

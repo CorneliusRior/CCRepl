@@ -46,15 +46,9 @@ namespace ReadingList.Commands
                     Cmd("List")
                         .Aliases("l", "ls", "lst", "PrintAll", "Table", "tbl", "ReadingList")
                         .Exec(MediaList)
+                        .Usage("Media.List [string SortBy]")
                         .Description("Lists all added media items.")
-                        .Children
-                        (
-                            Cmd("SortBy")
-                                .Description("Displays list, sorted by specified parameter")
-                                .Exec(NotImplemented)
-                                .Build()
-
-                        )
+                        .LongDescription("Lists all added media items. Optional argument 'SortBy' has options 'Id', 'Title', 'Type', 'Status', 'Genre', 'Year', 'Creator', 'Rating', 'Started', 'Completed', 'Added' and 'Updated'.")
                         .Build(),
 
                     Cmd("Show")
@@ -65,8 +59,10 @@ namespace ReadingList.Commands
                         .Build(),
 
                     Cmd("Search")
+                        .Exec(MediaSearch)
+                        .Usage("Media.Search <string SearchKey> [string SortBy]")
                         .Description("Searches the reading list with given search key.")
-                        .Exec(NotImplemented)
+                        .LongDescription("Searches the reading list with given search key. This works by building a 'SearchExpression' for each item consisting of 'Title Year Type Genre Creator': if searching for multiple of these, it needs to be in that order. Optional argument 'SortBy' has options 'Id', 'Title', 'Type', 'Status', 'Genre', 'Year', 'Creator', 'Rating', 'Started', 'Completed', 'Added' and 'Updated'.")
                         .Children
                         (
 
@@ -176,8 +172,8 @@ namespace ReadingList.Commands
                 .Children
                 (
                     Cmd("Summary")
+                        .Exec(StatsSummary)
                         .Description("Prints summary statistics.")
-                        .Exec(NotImplemented)
                         .Build(),
 
                     Cmd("ByType")
@@ -190,12 +186,34 @@ namespace ReadingList.Commands
                         .Exec(NotImplemented)
                         .Build()
                 )
+                .Build(),
+
+            Cmd("TestNew")
+                .Description("Testcommands which you shouldn't see.")
+                .Children
+                (
+                    Cmd("Wrap")
+                        .Exec(TestWordWrap)
+                        .Build()
+                )
                 .Build()
         ];
 
         private Task NotImplemented(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
         {
             ctx.WriteLine("This command is not implemented yet. Sorry.");
+            return Task.CompletedTask;
+        }
+
+        private Task TestWordWrap(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            int width = args.Int(0, "Width");
+            string str = args.String(1, "str");
+
+            ctx.WriteLine($"Trying to wrap string: \n\"{str}\"\n into a space of {width}:");
+            ctx.WriteLine("├" + new string ('─', width - 2) + "┤");
+            List<string> wrapped = str.Wrap(width);
+            foreach (string l in wrapped) ctx.WriteLine(l);
             return Task.CompletedTask;
         }
     }

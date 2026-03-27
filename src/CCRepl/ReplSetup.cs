@@ -30,6 +30,7 @@ public sealed partial class Repl
     {
         commandHead.Add(command.Name);        
         command.Address = string.Join('.', commandHead);
+        // put a try argument here: crashes when you have multiple commands with same name.
         CommandIndex.Add(command.Address, command);
         foreach (ReplCommand child in command.Children.OrderBy(c => c.Name).ToList()) AssignChildAddress(child, commandHead);
         commandHead.RemoveAt(commandHead.Count - 1);

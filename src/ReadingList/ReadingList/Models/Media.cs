@@ -21,6 +21,9 @@ namespace ReadingList.Models
         public string? Notes { get; set; }
         public double? Rating { get; set; }
 
+        // Search Expression:
+        public string SearchExpression => $"{Title} {ReleaseYear} {Type.ToDisplayString()} {Genre} {Creator}";
+
         // Load:
         public Media(int id, string title, MediaType type, MediaStatus status, int? releaseYear, string? genre, string? creator, DateTime? startedOn, DateTime? completedOn, DateTime addedOn, DateTime lastUpdated, string? progressNote, string? notes, double? rating)
         {

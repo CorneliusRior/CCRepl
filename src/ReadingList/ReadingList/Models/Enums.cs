@@ -15,7 +15,7 @@
     public static class MediaTypeExt
     {
         public static string MediaTypeList => "'Book', 'Film', 'Show', 'Game', 'Album', 'Song', Podcast', and 'Other'";
-        public static string ToString(this MediaType input) =>
+        public static string ToDisplayString(this MediaType input) =>
             input switch
             {
                 MediaType.Book      => "Book",  
@@ -33,19 +33,57 @@
         /// Present tense verb, i.e., "reading", "watching", "playing".        
         /// </summary>
         /// <remarks>Could expand to include other tenses, capitalization maybe?</remarks>
-        public static string ToVerb(this MediaType input) =>
-            input switch
+        public static string ToVerb(this MediaType input, VerbTense tense = VerbTense.Present, bool capitalize = false)
+        {
+            string output;
+
+            if (tense == VerbTense.Past) output = input switch
             {
-                MediaType.Book      => "reading",  
-                MediaType.Film      => "watching",  
-                MediaType.Show      => "watching",   
-                MediaType.Game      => "playing",  
-                MediaType.Album     => "listening",   
-                MediaType.Song      => "listening",
-                MediaType.Podcast   => "listening",
-                MediaType.Other     => "",
+                MediaType.Book      => "read",
+                MediaType.Film      => "watched",
+                MediaType.Show      => "watched",
+                MediaType.Game      => "played",
+                MediaType.Album     => "listened",
+                MediaType.Song      => "listened",
+                MediaType.Podcast   => "listened",
+                MediaType.Other     => "consumed",
                 _ => throw new ArgumentOutOfRangeException()
             };
+
+            else if (tense == VerbTense.Present) output = input switch
+            {
+                MediaType.Book      => "reading",
+                MediaType.Film      => "watching",
+                MediaType.Show      => "watching",
+                MediaType.Game      => "playing",
+                MediaType.Album     => "listening",
+                MediaType.Song      => "listening",
+                MediaType.Podcast   => "listening",
+                MediaType.Other     => "consuming",
+                _ => throw new ArgumentOutOfRangeException()
+            };
+
+            else /*if (tense == VerbTense.Future)*/ output = input switch
+            {
+                MediaType.Book      => "read",
+                MediaType.Film      => "watch",
+                MediaType.Show      => "watch",
+                MediaType.Game      => "play",
+                MediaType.Album     => "listen",
+                MediaType.Song      => "listen",
+                MediaType.Podcast   => "listen",
+                MediaType.Other     => "consume",
+                _ => throw new ArgumentOutOfRangeException()
+            };
+
+            if (capitalize)
+            {
+                output = output[0].ToString().ToUpper() + output.Skip(1);
+            }
+
+            return output;
+        }
+            
 
         public static MediaType ToMediaType(this string input) =>
             input.Trim().ToLowerInvariant() switch
@@ -173,5 +211,12 @@
                 return false;
             }
         }
+    }
+
+    public enum VerbTense
+    {
+        Past,
+        Present,
+        Future
     }
 }

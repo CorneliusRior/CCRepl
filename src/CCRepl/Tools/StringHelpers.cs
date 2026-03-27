@@ -1,4 +1,8 @@
 using CCRepl.Models;
+using System.Buffers;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace CCRepl.Tools;
@@ -90,6 +94,80 @@ public static class StringHelpers
         return (sb.ToString());
     }
 
+    private static void p(string msg = "Reached.", [CallerFilePath] string file = "", [CallerLineNumber] int line = 0, [CallerMemberName] string name = "")
+    {
+        Debug.WriteLine(file + $" (Line {line}) " + name + "(): " + msg);
+    }    
+
+    public static List<string> Wrap(this string input, int max)
+    {
+        List<string> wrapped = new();
+        if (max < 1) throw new ArgumentOutOfRangeException();
+        if (max == 1)
+        {
+            foreach (char c in input) if(c != '\r' && c != '\n') wrapped.Add(c.ToString());
+            return wrapped;
+        }
+
+        string[] lines = input.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+        if (lines.Max(l => l.Length) <= max) return lines.ToList();
+
+        foreach (string l in lines)
+        {
+            if (l.Length == 0)
+            {
+                wrapped.Add(string.Empty);
+                continue;
+            }
+
+            StringBuilder current = new();
+            string[] words = l.Split(' ', StringSplitOptions.None);
+
+            foreach (string word in words)
+            {
+                // Handle for spaces:
+                string w = current.Length == 0 ? word : " " + word;
+
+                // Add to current line if adding new word won't hurt:
+                if (w.Length + current.Length <= max)
+                {
+                    current.Append(w);
+                    continue;
+                }
+
+                // Now we've established that we need a new line: deal with current first:
+                if (current.Length > 0)
+                {
+                    wrapped.Add(current.ToString());
+                    current.Clear();
+                }
+
+                // Is the word itself too long?:
+                if (word.Length > max)
+                {
+                    int index = 0;
+                    while (index < word.Length)
+                    {
+                        int remaining = word.Length - index;
+                        if (remaining <= max)
+                        {
+                            wrapped.Add(word.Substring(index));
+                            break;
+                        }
+                        wrapped.Add(word.Substring(index, max - 1) + '-');
+                        index += max - 1;
+                    }
+                }
+                else
+                {
+                    current.Append(word);
+                }                
+            }
+            if (current.Length > 0) wrapped.Add(current.ToString());
+        }
+        return wrapped;
+    }
+
     public static string ToBox(this string msg)
     {
         if (string.IsNullOrWhiteSpace(msg)) return "┌─┐\n└─┘";
@@ -105,6 +183,30 @@ public static class StringHelpers
         sb.AppendLine('└' + vert + '┘');
         return sb.ToString();
     }      
+
+    
+    public static string ToTitleBox(this string msg, int? boxWidth = null, int? minBoxWidth = null, int? maxBoxWidth = null, string title = "")
+    {
+        // Determine the width:
+        int width;
+        string[] lineArray = msg.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+
+        if (boxWidth is not null) width = boxWidth.Value;
+        else width = Math.Max(title.Length + 2, lineArray.Max(s => s.Length));
+        if (maxBoxWidth is not null && width > maxBoxWidth) width = maxBoxWidth.Value;
+        if (minBoxWidth is not null && width < minBoxWidth) width = minBoxWidth.Value;
+
+        List<string> lines = msg.Wrap(width);
+        StringBuilder box = new();
+
+        // Draw box:
+        box.Append("┌─" + title.Truncate(width - 2) + new string('─', width - title.Length - 2) + "─┐");
+        foreach (string l in lines) box.Append('│' + l.PadRight(width) + '│');
+        box.Append('└' + new string('─', width) + '┘');
+
+        return box.ToString();
+    }
+    
     
     public static string ToDoubleBox(this string msg)
     {
