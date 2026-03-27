@@ -242,6 +242,28 @@ public static class StringHelpers
     
 }
 
+public sealed record PrintTableColumn
+{
+    public string Header { get; init; }
+    public int Width { get; init; }
+    public bool AlignRight { get; init; }
+
+    // New
+    public PrintTableColumn(string header, int width, bool alignRight)
+    {
+        Header = header;
+        Width = width;
+        AlignRight = alignRight;
+    }
+
+    public PrintTableColumn(string header, int width)
+    {
+        Header = header;
+        Width = width;
+        AlignRight = false;
+    }
+}
+
 public sealed record PrintTable
 {
     public string[] Headers { get; init; }
@@ -259,7 +281,7 @@ public sealed record PrintTable
         Validate();
     }
 
-    public PrintTable(string[] headers, int[] columnWidths, bool[] alignRight) //: this(headers, [], columnWidths, alignRight)
+    public PrintTable(string[] headers, int[] columnWidths, bool[] alignRight) 
     {
         Headers = headers;
         ColumnWidths = columnWidths;
@@ -268,7 +290,7 @@ public sealed record PrintTable
         Validate();
     }
     
-    public PrintTable(string[] headers, int[] columnWidths) //: this(headers, [], columnWidths, [])
+    public PrintTable(string[] headers, int[] columnWidths) 
     {
         Headers = headers;
         ColumnWidths = columnWidths;
