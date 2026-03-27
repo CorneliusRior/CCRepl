@@ -182,27 +182,31 @@ public static class StringHelpers
         foreach (string l in lines) sb.AppendLine("│ " + l.PadRight(msgWidth) + " │");
         sb.AppendLine('└' + vert + '┘');
         return sb.ToString();
-    }      
+    }
 
-    
-    public static string ToTitleBox(this string msg, int? boxWidth = null, int? minBoxWidth = null, int? maxBoxWidth = null, string title = "")
+
+    public static string ToTitleBox(this string msg, int? boxWidth = null, int? minBoxWidth = null, int? maxBoxWidth = null, int vPadding = 0, int hPadding = 0, string title = "")
     {
         // Determine the width:
         int width;
         string[] lineArray = msg.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
 
         if (boxWidth is not null) width = boxWidth.Value;
-        else width = Math.Max(title.Length + 2, lineArray.Max(s => s.Length));
+        else width = Math.Max(title.Length + 4, lineArray.Max(s => s.Length));
         if (maxBoxWidth is not null && width > maxBoxWidth) width = maxBoxWidth.Value;
         if (minBoxWidth is not null && width < minBoxWidth) width = minBoxWidth.Value;
 
-        List<string> lines = msg.Wrap(width);
+        List<string> lines = msg.Wrap(width - (hPadding * 2));
         StringBuilder box = new();
 
+        title = '[' + title + ']';
+
         // Draw box:
-        box.Append("┌─" + title.Truncate(width - 2) + new string('─', width - title.Length - 2) + "─┐");
-        foreach (string l in lines) box.Append('│' + l.PadRight(width) + '│');
-        box.Append('└' + new string('─', width) + '┘');
+        box.AppendLine("┌─" + title.Truncate(width - 2) + new string('─', width - title.Length - 2) + "─┐");
+        for (int i = vPadding; i > 0; i--) box.AppendLine('│' + new string(' ', width) + '│');
+        foreach (string l in lines) box.AppendLine('│' + new string(' ', hPadding) + l.PadRight(width - (hPadding * 2)) + new string(' ', hPadding) + '│');
+        for (int i = vPadding; i > 0; i--) box.AppendLine('│' + new string(' ', width) + '│');
+        box.AppendLine('└' + new string('─', width) + '┘');
 
         return box.ToString();
     }

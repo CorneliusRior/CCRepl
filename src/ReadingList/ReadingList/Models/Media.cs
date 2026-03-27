@@ -77,7 +77,7 @@ namespace ReadingList.Models
             sb.AppendLine($"Creator: {Creator ?? "(unspecified)"}");
 
             if (StartedOn is not null) sb.Append($"Started {Type.ToVerb()} on {StartedOn.Value.ToString("d")}. ");
-            if (CompletedOn is not null) sb.Append($"Started {Type.ToVerb()} on {CompletedOn.Value.ToString("d")}.");
+            if (CompletedOn is not null) sb.Append($"Finished {Type.ToVerb()} on {CompletedOn.Value.ToString("d")}.");
             if (StartedOn is not null || CompletedOn is not null) sb.AppendLine();
 
             sb.AppendLine("Notes: " + (string.IsNullOrWhiteSpace(Notes) ? "(none)." : Notes));

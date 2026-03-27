@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using CCRepl.Models;
+using Microsoft.Data.Sqlite;
 using ReadingList.Models;
 
 namespace ReadingList.Services
@@ -73,7 +74,7 @@ namespace ReadingList.Services
             using SqliteCommand cmd = new(sql, conn);
             cmd.Parameters.AddWithValue("$id", id);
             SqliteDataReader reader = cmd.ExecuteReader();
-            if (!reader.Read()) throw new IndexOutOfRangeException();
+            if (!reader.Read()) throw new ReplUserException($"Could not find entry with Id #{id}.");
             return new Media(
                 reader.GetInt32(0),
                 reader.GetString(1),

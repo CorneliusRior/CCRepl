@@ -137,7 +137,7 @@ namespace ReadingList.Commands
                         .Aliases("n", "Notes", "nt")
                         .Exec(MediaNote)
                         .Usage("Media.Note <int Id> [string Note]")
-                        .Description("Add a note to a piece of media if none exists")
+                        .Description("Set note, or append note for entry if one exists.")
                         .LongDescription("Will check if there is a note for Id, if there is one, will append, if not, will set (override). If argument \"Note\" is not given, will be prompted.")
                         .Children
                         (
@@ -159,7 +159,7 @@ namespace ReadingList.Commands
 
                     Cmd("Delete")
                         .Aliases("d", "del", "rm", "Remove", "Erase")
-                        .Exec(Delete)
+                        .Exec(MediaDelete)
                         .Usage("Media.Delete <int Id>")
                         .Description("Deletes a media item from the list.")
                         .Build()
@@ -168,53 +168,9 @@ namespace ReadingList.Commands
                 .Build(),
 
             Cmd("Stats")
-                .Description("Commands for viewing statistics for media items.")
-                .Children
-                (
-                    Cmd("Summary")
-                        .Exec(StatsSummary)
-                        .Description("Prints summary statistics.")
-                        .Build(),
-
-                    Cmd("ByType")
-                        .Description("Prints summary statistics by media type.")
-                        .Exec(NotImplemented)
-                        .Build(),
-
-                    Cmd("ByStatus")
-                        .Description("Prints summary statistics by media status.")
-                        .Exec(NotImplemented)
-                        .Build()
-                )
-                .Build(),
-
-            Cmd("TestNew")
-                .Description("Testcommands which you shouldn't see.")
-                .Children
-                (
-                    Cmd("Wrap")
-                        .Exec(TestWordWrap)
-                        .Build()
-                )
+                .Exec(StatsSummary)
+                .Description("Displays some information about reading list.")
                 .Build()
         ];
-
-        private Task NotImplemented(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
-        {
-            ctx.WriteLine("This command is not implemented yet. Sorry.");
-            return Task.CompletedTask;
-        }
-
-        private Task TestWordWrap(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
-        {
-            int width = args.Int(0, "Width");
-            string str = args.String(1, "str");
-
-            ctx.WriteLine($"Trying to wrap string: \n\"{str}\"\n into a space of {width}:");
-            ctx.WriteLine("├" + new string ('─', width - 2) + "┤");
-            List<string> wrapped = str.Wrap(width);
-            foreach (string l in wrapped) ctx.WriteLine(l);
-            return Task.CompletedTask;
-        }
     }
 }

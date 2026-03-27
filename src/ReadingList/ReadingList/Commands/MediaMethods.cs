@@ -55,7 +55,7 @@ namespace ReadingList.Commands
             string? progressNote = await ctx.RequestStringNullable(ct, "Note on progress (e.g. 'Chapter 20', 'Episode 5', '1hr 20mins', optional): ");
             string? notes = await ctx.RequestStringNullable(ct, "Other notes (optional): ");
             double? rating = await ctx.RequireAsync<double?>(ct, "Rate out of 10 (optional, leave blank, 'null', or 'unrated' otherwise): ",
-                s => (int.TryParse(s, out int v), v), "Could not parse, please try again.", null, "", " ", "_", "null", "unrated", "idk");
+                s => (double.TryParse(s, out double v), v), "Could not parse, please try again.", null, "", " ", "_", "null", "unrated", "idk");
 
             _service.AddMedia(new Media(title, type, status, releaseYear, genre, creator, startedOn, completedOn, progressNote, notes, rating));
 
@@ -283,13 +283,16 @@ namespace ReadingList.Commands
             ctx.WriteLine(entry.PrintInfo());
         }
 
-        private async Task Delete(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        private async Task MediaDelete(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
         {
             int id = args.Int(0, "Id");
             Media entry = _service.GetById(id);
             bool conf = await ctx.ConfirmAsync(ct, $"Delete entry #{id}: '{entry.Title}'? (Y/N): ", false);
-            if (conf) _service.Delete(id);
-            ctx.WriteLine($"Deleted entry #{id}");
+            if (conf)
+            {
+                _service.Delete(id);
+                ctx.WriteLine($"Deleted entry #{id}");
+            }
         }
 
         private Task StatsSummary(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
@@ -299,32 +302,53 @@ namespace ReadingList.Commands
             if (readingList.Count == 0) ctx.WriteLine("No items added to reading list.");
             else
             {
-                StringBuilder sb = new();
-                sb.AppendLine($"You have {stats.Count} item{(stats.Count == 1 ? "" : "s")} in your reading list:");                
+                ctx.WriteLine($"You have {stats.Count} item{(stats.Count == 1 ? "" : "s")} in your reading list:");
+
                 foreach (var t in stats.TypeList)
                 {
                     if (t.Value.Count > 0)
                     {
-                        sb.AppendLine();
-                        sb.AppendLine($" -- {t.Value.Count} {t.Key.ToDisplayString()}{(t.Value.Count == 1 ? "" : "s")}: --");
-                        sb.AppendLine($"The {t.Key.ToVerb()} of which is:");
+                        StringBuilder sb = new();
+
+                        sb.AppendLine($"You have {t.Value.Count} {t.Key.ToDisplayString() + (t.Value.Count == 1 ? "" : "s")} on your list, of which:");
+
                         foreach (MediaStatus status in Enum.GetValues(typeof(MediaStatus)))
                         {
                             int count = t.Value.Where(m => m.Status == status).Count();
                             if (count > 0) sb.AppendLine($" - {count} {status.ToDisplayString()} ({((double)count / (double)t.Value.Count * 100).ToString("0.#")}%)");
                         }
 
-                        List<Media> rated = t.Value.Where(m => m.Rating.HasValue).ToList();
-                        if (rated.Count == 0) sb.AppendLine("\tNone of which are rated.");
+                        List<Media> typeRated = t.Value.Where(m => m.Rating.HasValue).ToList();
+                        if (typeRated.Count == 0) sb.AppendLine("\tNone of which are rated.");
                         else
                         {
-                            sb.AppendLine($"{rated.Count}/{t.Value.Count} of which are rated ({((double)rated.Count / (double)t.Value.Count * 100).ToString("0.#")}%), with an average rating of {rated.Average(m => m.Rating)!.Value.ToString("0.#")}/10.");
+                            sb.Append($"{typeRated.Count}/{t.Value.Count} of which are rated ({((double)typeRated.Count / (double)t.Value.Count * 100).ToString("0.#")}%), with an average rating of {typeRated.Average(m => m.Rating)!.Value.ToString("0.#")}/10.");
                         }
+
+                        List<Media> typeWithYear = t.Value.Where(m => m.ReleaseYear.HasValue).ToList();
+                        if (typeWithYear.Count > 0) sb.AppendLine($"The average (specified) year of publication is {(int?)typeWithYear.Average(m => m.ReleaseYear!)}");
+
+                        ctx.WriteLine(sb.ToString().ToTitleBox(boxWidth: 100, hPadding: 2, vPadding: 1, title: t.Key.ToDisplayString() + 's'));
                     }
                 }
-                sb.AppendLine();
 
-                ctx.WriteLine(sb.ToString());
+                ctx.WriteLine($"Overall, of all {stats.Count} item{(stats.Count == 1 ? "" : "s")},");
+                foreach (var s in stats.StatusList)
+                {
+                    if (s.Value.Count > 0) ctx.WriteLine($" - {s.Value.Count} {(s.Value.Count == 1 ? "is" : "are")} listed as {s.Key.ToDisplayString()} ({((double)s.Value.Count / (double)stats.Count * 100).ToString("0.#")}%)");
+                }
+
+                List<Media> rated = readingList.Where(m => m.Rating.HasValue).ToList();
+                if (rated.Count > 0)
+                {
+                    double avg = rated.Average(m => m.Rating)!.Value;
+                    ctx.WriteLine($"\nYou rated {rated.Count} of them ({((double)rated.Count / (double)stats.Count * 100).ToString("0.#")}%), with an average rating of {avg.ToString("0.#")}/10.");
+                }
+                List<Media> withYear = readingList.Where(m => m.ReleaseYear.HasValue).ToList();
+                if (withYear.Count > 0)
+                {
+                    if (withYear.Count > 0) ctx.WriteLine($"The average (specified) year of publication is {(int?)withYear.Average(m => m.ReleaseYear!)}");
+                }
             }
             
             return Task.CompletedTask;
