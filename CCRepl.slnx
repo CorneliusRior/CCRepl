@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/docs/">
+    <File Path="ReadingList.md" />
     <File Path="ReplCommand.md" />
     <File Path="ReplContext.md" />
     <File Path="Scripts.md" />
