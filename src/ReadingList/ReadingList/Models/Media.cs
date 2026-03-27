@@ -87,59 +87,22 @@ namespace ReadingList.Models
 
             return sb.ToString().ToBox();
         }
-
-        public static int[] ColumnWidths => 
+        public static List<PrintTableColumn> Columns => 
         [
-            4,      // Id
-            24,     // Title
-            8,      // Type
-            12,     // Status
-            5,      // Year
-            10,     // Genre
-            20,     // Creator
-            10,     // Started
-            10,     // Finished
-            20,     // Progress
-            25,     // Notes
-            8,      // Rating
-            10,     // Added
-            20      // Last Updated
-        ];
-
-        public static bool[] AlignRight =>
-        [
-            false,
-            false,
-            false,
-            false,
-            true,
-            false,
-            false,
-            true,
-            true,
-            false,
-            false,
-            true,
-            true,
-            true
-        ];
-
-        public static string[] Headers => 
-        [
-            "Id",
-            "Title:",
-            "Type:",
-            "Status:",
-            "Year:",
-            "Genre:",
-            "Creator",
-            "Started:",
-            "Finished:",
-            "Progress:",
-            "Notes:",
-            "Rating:",
-            "Added:",
-            "Last Updated:"
+            new("Id",           4,      false),
+            new("Title:",       24,     false),
+            new("Type:",        8,      false),
+            new("Status:",      12,     false),
+            new("Year:",        5,      true),
+            new("Genre:",       10,     false),
+            new("Creator",      20,     false),
+            new("Started:",     10,     true),
+            new("Finished:",    10,     true),
+            new("Progress:",    20,     false),
+            new("Notes:",       25,     false),
+            new("Rating:",      8,      true),
+            new("Added:",       10,     true),
+            new("Last Updated:",20,     true)
         ];
 
         public string?[] Items => 
@@ -160,6 +123,6 @@ namespace ReadingList.Models
             LastUpdated.ToString("g")
         ];
 
-        public static PrintTable GetTable() => new PrintTable(Headers, ColumnWidths, AlignRight);
+        //public static PrintTable GetTable() => new PrintTable(Headers, ColumnWidths, AlignRight);
     }
 }

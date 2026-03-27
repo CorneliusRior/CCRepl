@@ -266,56 +266,39 @@ public sealed record PrintTableColumn
 
 public sealed record PrintTable
 {
-    public string[] Headers { get; init; }
+    public List<PrintTableColumn> Columns { get; init; }
     public List<string?[]> Items { get; set; }
-    public int[] ColumnWidths { get; init; }
-    public bool[] AlignRight { get; init; }
 
     // New:
-    public PrintTable(string[] headers, List<string?[]> items, int[] columnWidths, bool[] alignRight)
+    public PrintTable(List<PrintTableColumn> columns, List<string?[]> items)
     {
-        Headers = headers;
+        Columns = columns;
         Items = items;
-        ColumnWidths = columnWidths;
-        AlignRight = alignRight;
         Validate();
     }
 
-    public PrintTable(string[] headers, int[] columnWidths, bool[] alignRight) 
+    public PrintTable(List<PrintTableColumn> columns) 
     {
-        Headers = headers;
-        ColumnWidths = columnWidths;
-        AlignRight = alignRight;
-        Items = [];
-        Validate();
-    }
-    
-    public PrintTable(string[] headers, int[] columnWidths) 
-    {
-        Headers = headers;
-        ColumnWidths = columnWidths;
-        AlignRight = [];
+        Columns = columns;
         Items = [];
         Validate();
     }
 
     public void AddItem(string?[] line)
     {
-        if (line.Length != Headers.Length) throw new ReplException($"Table Headers and line '{Items.Count + 1}' are different lengths, must be identical. Headers.Length='{Headers.Length}', line length='{line.Length}'.");
+        if (line.Length != Columns.Count) throw new ReplException($"Table and line '{Items.Count + 1}' have different columns amount, must be identical. Columns.Count='{Columns.Count}', line length='{line.Length}'.");
         Items.Add(line);
     }
 
     public void AddItems(List<string?[]> lines)
     {
-        foreach (string?[] l in lines) if (l.Length != Headers.Length) throw new ReplException($"Table Headers and an item line are different lengths, must be identical. Headers.Length='{Headers.Length}', line length='{l.Length}'.\nLine: '{string.Join(" / ", l)}'.");
+        foreach (string?[] l in lines) if (l.Length != Columns.Count) throw new ReplException($"Table and an item line have different column amount, must be identical. Columns.Count='{Columns.Count}', line length='{l.Length}'.\nLine: '{string.Join(" / ", l)}'.");
         Items.AddRange(lines);
     }
 
     private void Validate()
     {
-        if (Headers.Length != ColumnWidths.Length) throw new ReplException($"Table Header and ColumnWidths are different lengths, must be identical. Headers.Length='{Headers.Length}', ColumnWidths.Length='{ColumnWidths.Length}'.");
-        if (AlignRight.Length > Headers.Length) throw new ReplException($"AlignRight array too large, Headers.Length='{Headers.Length}', AlignRight.Length='{AlignRight.Length}'.");
-        while (AlignRight.Length < Headers.Length) AlignRight.Append(false);
+        foreach (string?[] l in Items) if (l.Length != Columns.Count) throw new ReplException($"Table and an item line have different column amount, must be identical. Columns.Count='{Columns.Count}', line length='{l.Length}'.\nLine: '{string.Join(" / ", l)}'.");
     }
 
     public string Print()
@@ -328,42 +311,41 @@ public sealed record PrintTable
 
         // Draw Banner, top:
         sb.Append('┌');
-        for (int i = 0; i < ColumnWidths.Length; i++)
+        for (int i = 0; i < Columns.Count; i++)
         {
-            sb.Append(new string('─', ColumnWidths[i]));
-            if (i + 1 != ColumnWidths.Length) sb.Append('┬');
+            sb.Append(new string('─', Columns[i].Width));
+            if (i + 1 != Columns.Count) sb.Append('┬');
         }
         sb.Append('┐');
 
         // Text:
         sb.Append('\n');
         sb.Append('│');
-        for (int i = 0; i < ColumnWidths.Length; i++)
+        for (int i = 0; i < Columns.Count; i++)
         {
-            sb.Append(Headers[i].TruncatePadRight(ColumnWidths[i]));
+            sb.Append(Columns[i].Header.TruncatePadRight(Columns[i].Width));
             sb.Append('│');
         }
 
         // Bottom:
         sb.Append('\n');
         sb.Append('├');
-        for (int i = 0; i < ColumnWidths.Length; i++)
+        for (int i = 0; i < Columns.Count; i++)
         {
-            sb.Append(new string('─', ColumnWidths[i]));
-            if (i + 1 != ColumnWidths.Length) sb.Append('┼');
+            sb.Append(new string('─', Columns[i].Width));
+            if (i + 1 != Columns.Count) sb.Append('┼');
         }
         sb.Append('┤');
 
         // Next, draw items:
         foreach (string?[] line in Items)
         {
-            if (line.Length != Headers.Length) throw new ReplException($"Table line and table header are different lengths, must be identical (fill in blanks with 'null'):\nHeaders='{string.Join(" / ", Headers)}'\nItems='{string.Join(" / ", line)}'");
             sb.Append('\n');
             sb.Append('│');
-            for (int i = 0; i < ColumnWidths.Length; i++)
+            for (int i = 0; i < Columns.Count; i++)
             {
-                if (AlignRight[i]) sb.Append((line[i] ?? "-").TruncatePadLeft(ColumnWidths[i]));
-                else sb.Append((line[i] ?? "-").TruncatePadRight(ColumnWidths[i]));
+                if (Columns[i].AlignRight) sb.Append((line[i] ?? "-").TruncatePadLeft(Columns[i].Width));
+                else sb.Append((line[i] ?? "-").TruncatePadRight(Columns[i].Width));
                 sb.Append('│');
             }
         }
@@ -371,10 +353,10 @@ public sealed record PrintTable
         // Finally, draw the bottom of the table:
         sb.Append('\n');
         sb.Append('└');
-        for (int i = 0; i < ColumnWidths.Length; i++)
+        for (int i = 0; i < Columns.Count; i++)
         {
-            sb.Append(new string('─', ColumnWidths[i]));
-            if (i + 1 != ColumnWidths.Length) sb.Append('┴');
+            sb.Append(new string('─', Columns[i].Width));
+            if (i + 1 != Columns.Count) sb.Append('┴');
         }
         sb.Append('┘');
 

@@ -70,8 +70,7 @@ namespace ReadingList.Commands
 
             List<string?[]> stringList = new();
             foreach (Media m in readingList) stringList.Add(m.Items);
-            PrintTable table = Media.GetTable();
-            table.AddItems(stringList);
+            PrintTable table = new(Media.Columns, stringList);
             ctx.WriteLine("Printing list.");
             ctx.WriteLine(table.Print());
             return Task.CompletedTask;
@@ -135,8 +134,7 @@ namespace ReadingList.Commands
 
             List<string?[]> stringList = new();
             foreach (Media m in filt) stringList.Add(m.Items);
-            PrintTable table = Media.GetTable();
-            table.AddItems(stringList);
+            PrintTable table = new(Media.Columns, stringList);
             ctx.WriteLine($"Printing all items containing '{searchKey}':");
             ctx.WriteLine(table.Print());
             return Task.CompletedTask;
