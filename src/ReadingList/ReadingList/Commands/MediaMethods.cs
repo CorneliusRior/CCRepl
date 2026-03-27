@@ -281,6 +281,26 @@ namespace ReadingList.Commands
             ctx.WriteLine(entry.PrintInfo());
         }
 
+        private async Task MediaProgress(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            int id = args.Int(0, "Id");
+            string? note = args.StringOrNull(1, "Note");
+            Media entry = _service.GetById(id);
+
+            // In the event of no entry:
+            if (note is null)
+            {
+                ctx.WriteLine(entry.PrintInfo());
+                note = await ctx.ReadLineAsync($"Set progress note: ", ct);
+            }
+
+            // Now we assume something was entered, in which case, null or whitespace can mean to delete progress note:
+            if (string.IsNullOrWhiteSpace(note)) note = null;
+            entry.ProgressNote = note;
+            _service.Update(entry);
+            ctx.WriteLine($"Updated progress note for {entry.PrintRef()}: \"{(entry.ProgressNote ?? "(None)")}\"");
+        }
+
         private async Task MediaDelete(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
         {
             int id = args.Int(0, "Id");
@@ -326,7 +346,7 @@ namespace ReadingList.Commands
                         List<Media> typeWithYear = t.Value.Where(m => m.ReleaseYear.HasValue).ToList();
                         if (typeWithYear.Count > 0) sb.AppendLine($"The average (specified) year of publication is {(int?)typeWithYear.Average(m => m.ReleaseYear!)}");
 
-                        ctx.WriteLine(sb.ToString().ToTitleBox(boxWidth: 100, hPadding: 2, vPadding: 1, title: t.Key.ToDisplayString() + 's'));
+                        ctx.WriteLine(sb.ToString().ToBox(boxWidth: 100, hPadding: 2, vPadding: 1, title: t.Key.ToDisplayString() + 's'));
                     }
                 }
 
@@ -348,7 +368,6 @@ namespace ReadingList.Commands
                     if (withYear.Count > 0) ctx.WriteLine($"The average (specified) year of publication is {(int?)withYear.Average(m => m.ReleaseYear!)}");
                 }
             }
-            
             return Task.CompletedTask;
         }
 

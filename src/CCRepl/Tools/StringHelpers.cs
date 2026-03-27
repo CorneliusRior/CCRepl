@@ -14,7 +14,7 @@ public static class StringHelpers
     public static string Unindent(this string input) => input.Replace("\t", "");
 
     /// <summary>
-    /// Truncates strength to desired length, adding truncateString to the end if cut off.
+    /// Truncates string to specified length, adding truncateString to the end if cut off.
     /// </summary>
     /// <param name="input"></param>
     /// <param name="length"></param>
@@ -30,17 +30,47 @@ public static class StringHelpers
         return input[..(length - truncateString.Length)] + truncateString;
     }
 
-    
+    /// <summary>
+    /// Truncates string to specified length, adding truncateString to the end if cut off, or pads to the right if not.
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="length"></param>
+    /// <param name="truncateString"></param>
+    /// <returns></returns>
     public static string TruncatePadRight(this string input, int length, string truncateString = "…") => input.Truncate(length, truncateString).PadRight(length);
 
+    /// <summary>
+    /// Truncates string to specified length, adding truncateString to the end if cut off, or pads to the left if not.
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="length"></param>
+    /// <param name="truncateString"></param>
+    /// <returns></returns>
     public static string TruncatePadLeft(this string input, int length, string truncateString = "…") => input.Truncate(length, truncateString).PadLeft(length);
 
+    /// <summary>
+    /// Truncates nullable string to specified length, adding truncateString to the end if cut off, or returning null if null.
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="length"></param>
+    /// <param name="truncateString"></param>
+    /// <returns></returns>
     public static string? TruncateNullable(this string? input, int length, string truncateString = "…")
     {
         if (input is null) return null;
         return input.Truncate(length, truncateString);
     }
 
+    /// <summary>
+    /// Converts double to string and truncates to specified length, addubg truncateString to the end if cut off, with optional arguments for prefix, suffix, and format.
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="length"></param>
+    /// <param name="format"></param>
+    /// <param name="prefix"></param>
+    /// <param name="suffix"></param>
+    /// <param name="truncateString"></param>
+    /// <returns></returns>
     public static string ToStringTruncate(this double input, int length, string format = "0.#", string prefix = "", string suffix = "", string truncateString = "…")
     {
         string output = prefix + input.ToString(format) + suffix;
@@ -48,6 +78,16 @@ public static class StringHelpers
         return output;
     }
 
+    /// <summary>
+    /// Converts int to string and truncates to specified length, addubg truncateString to the end if cut off, with optional arguments for prefix, suffix, and format.
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="length"></param>
+    /// <param name="format"></param>
+    /// <param name="prefix"></param>
+    /// <param name="suffix"></param>
+    /// <param name="truncateString"></param>
+    /// <returns></returns>
     public static string ToStringTruncate(this int input, int length, string prefix = "", string suffix = "", string truncateString = "…")
     {
         string output = prefix + input.ToString() + suffix;
@@ -99,6 +139,11 @@ public static class StringHelpers
         Debug.WriteLine(file + $" (Line {line}) " + name + "(): " + msg);
     }    
 
+    /// <summary>
+    /// Wraps text to a given width (max).
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="max"></param>
     public static List<string> Wrap(this string input, int max)
     {
         List<string> wrapped = new();
@@ -167,7 +212,8 @@ public static class StringHelpers
         }
         return wrapped;
     }
-
+    
+    /*
     public static string ToBox(this string msg)
     {
         if (string.IsNullOrWhiteSpace(msg)) return "┌─┐\n└─┘";
@@ -182,10 +228,58 @@ public static class StringHelpers
         foreach (string l in lines) sb.AppendLine("│ " + l.PadRight(msgWidth) + " │");
         sb.AppendLine('└' + vert + '┘');
         return sb.ToString();
+    }*/
+
+    /// <summary>
+    /// Draws a box around msg using box characters, with optional title which appears in the top left.
+    /// </summary>
+    /// <param name="msg"></param>
+    /// <param name="boxWidth">Manually set width of the box</param>
+    /// <param name="minBoxWidth">Minimum box size</param>
+    /// <param name="maxBoxWidth">Maximum box size</param>
+    /// <param name="vPadding">Blank space above and below the body</param>
+    /// <param name="hPadding">Blank space to left and right of the body</param>
+    /// <param name="title">String which appears in the top left</param>
+    /// <returns></returns>
+    public static string ToBox(this string msg, int? boxWidth = null, int? minBoxWidth = null, int? maxBoxWidth = null, int vPadding = 0, int hPadding = 0, string title = "")
+    {
+        // Determine the width:
+        int width;
+        string[] lineArray = msg.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+
+        if (boxWidth is not null) width = boxWidth.Value;
+        else width = Math.Max(title.Length + 4, lineArray.Max(s => s.Length));
+        if (maxBoxWidth is not null && width > maxBoxWidth) width = maxBoxWidth.Value;
+        if (minBoxWidth is not null && width < minBoxWidth) width = minBoxWidth.Value;
+
+        List<string> lines = msg.Wrap(width - (hPadding * 2));
+        if (string.IsNullOrWhiteSpace(lines[^1])) lines.Remove(lines[^1]);
+        StringBuilder box = new();
+
+        title = string.IsNullOrWhiteSpace(title) ? "──" : '[' + title + ']';
+
+        // Draw box:
+        box.AppendLine("┌─" + title.Truncate(width - 2) + new string('─', width - title.Length - 2) + "─┐");
+        for (int i = vPadding; i > 0; i--) box.AppendLine('│' + new string(' ', width) + '│');
+        foreach (string l in lines) box.AppendLine('│' + new string(' ', hPadding) + l.PadRight(width - (hPadding * 2)) + new string(' ', hPadding) + '│');
+        for (int i = vPadding; i > 0; i--) box.AppendLine('│' + new string(' ', width) + '│');
+        box.AppendLine('└' + new string('─', width) + '┘');
+
+        return box.ToString();
     }
 
-
-    public static string ToTitleBox(this string msg, int? boxWidth = null, int? minBoxWidth = null, int? maxBoxWidth = null, int vPadding = 0, int hPadding = 0, string title = "")
+    /// <summary>
+    /// Draws a box around msg using double box characters, with optional title which appears in the top left.
+    /// </summary>
+    /// <param name="msg"></param>
+    /// <param name="boxWidth">Manually set width of the box</param>
+    /// <param name="minBoxWidth">Minimum box size</param>
+    /// <param name="maxBoxWidth">Maximum box size</param>
+    /// <param name="vPadding">Blank space above and below the body</param>
+    /// <param name="hPadding">Blank space to left and right of the body</param>
+    /// <param name="title">String which appears in the top left</param>
+    /// <returns></returns>
+    public static string ToDoubleBox(this string msg, int? boxWidth = null, int? minBoxWidth = null, int? maxBoxWidth = null, int vPadding = 0, int hPadding = 0, string title = "")
     {
         // Determine the width:
         int width;
@@ -199,19 +293,21 @@ public static class StringHelpers
         List<string> lines = msg.Wrap(width - (hPadding * 2));
         StringBuilder box = new();
 
-        title = '[' + title + ']';
+        title = string.IsNullOrWhiteSpace(title) ? "══" : '╣' + title + '╠';
 
         // Draw box:
-        box.AppendLine("┌─" + title.Truncate(width - 2) + new string('─', width - title.Length - 2) + "─┐");
-        for (int i = vPadding; i > 0; i--) box.AppendLine('│' + new string(' ', width) + '│');
-        foreach (string l in lines) box.AppendLine('│' + new string(' ', hPadding) + l.PadRight(width - (hPadding * 2)) + new string(' ', hPadding) + '│');
-        for (int i = vPadding; i > 0; i--) box.AppendLine('│' + new string(' ', width) + '│');
-        box.AppendLine('└' + new string('─', width) + '┘');
+        if (title.Length > 2) box.AppendLine("  ╔" + new string('═', Math.Min(title.Length - 2, width - 4)) + '╗');
+        box.AppendLine("╔═" + title.Truncate(width - 2) + new string('═', width - title.Length - 2) + "═╗");
+        if (title.Length > 2) box.AppendLine("║ ╚" + new string('═', Math.Min(title.Length - 2, width - 4)) + '╝' + new string(' ', width - title.Length - 1) + '║');
+        for (int i = vPadding; i > 0; i--) box.AppendLine('║' + new string(' ', width) + '║');
+        foreach (string l in lines) box.AppendLine('║' + new string(' ', hPadding) + l.PadRight(width - (hPadding * 2)) + new string(' ', hPadding) + '║');
+        for (int i = vPadding; i > 0; i--) box.AppendLine('║' + new string(' ', width) + '║');
+        box.AppendLine('╚' + new string('═', width) + '╝');
 
         return box.ToString();
     }
-    
-    
+
+    /*
     public static string ToDoubleBox(this string msg)
     {
         if (string.IsNullOrWhiteSpace(msg)) return "╔═╗\n╚═╝";
@@ -226,7 +322,7 @@ public static class StringHelpers
         foreach (string l in lines) sb.AppendLine("║ " + l.PadRight(msgWidth) + " ║");
         sb.AppendLine('╚' + vert + '╝');
         return sb.ToString();
-    }
+    }*/
 
     /* Method to print tables. Will print out all the box things:
      ─ │ ┌ ┐ └ ┘ ├ ┼ ┤ ┴ ┬
@@ -237,11 +333,28 @@ public static class StringHelpers
     │ │ │ 179     179     179       
     └─┴─┘ 192 196 193 196 217       ┼ = 197     ┘ = 217     ┌ = 218
 
+    ╔═╦═╗ 201 205 203 205 187       ║ = 186     ╣ = 185     ╗ = 187     ╚ = 200
+    ║ ║ ║ 186     186     186       
+    ╠═╬═╣ 204 205 206 205 185       ╩ = 202     ╦ = 203     ╠ = 204     ═ = 205
+    ║ ║ ║ 186     186     186       
+    ╚═╩═╝ 200 205 202 205 188       ╬ = 206     ╝ = 188     ╔ = 201
+
     */
 
-    
+
 }
 
+/// <summary>
+/// Definition for a row which can be used in a <see cref="PrintTable"/>
+/// </summary>
+/// <example>
+/// public static List<PrintTableColumn> Columns =>
+/// [
+///     new("Id", 4, false),
+///     new("Name", 24, false),
+///     new("Date of Birth", 15, true)
+/// ];
+/// </example>
 public sealed record PrintTableColumn
 {
     public string Header { get; init; }
@@ -264,6 +377,31 @@ public sealed record PrintTableColumn
     }
 }
 
+/// <summary>
+/// Table which can be rendered using box characters. Columns defined with <see cref="PrintTableColumn"/>
+/// </summary>
+/// <example>
+/// // This could be put in a class:
+/// public static List<PrintTableColumn> Columns =>
+/// [
+///     new("Id", 4, false),
+///     new("Name", 24, false),
+///     new("Date of Birth", 15, true)
+/// ];
+/// 
+/// public string?[] Items =>
+/// [
+///     Id,
+///     Name,
+///     DateOfBirth.ToString("d")
+/// ];
+/// 
+/// // And then called like:
+/// List<Profile> profiles;
+/// List<string?[]> itemList;
+/// foreach (Profile p in profiles) itemList.Add(p.Items);
+/// PrintTable table = new(Profile.Columns, itemList);
+/// </example>
 public sealed record PrintTable
 {
     public List<PrintTableColumn> Columns { get; init; }

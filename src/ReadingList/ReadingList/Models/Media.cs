@@ -76,11 +76,12 @@ namespace ReadingList.Models
             sb.AppendLine($"Genre: {Genre ?? "(unspecified)"}");
             sb.AppendLine($"Creator: {Creator ?? "(unspecified)"}");
 
-            if (StartedOn is not null) sb.Append($"Started {Type.ToVerb()} on {StartedOn.Value.ToString("d")}. ");
-            if (CompletedOn is not null) sb.Append($"Finished {Type.ToVerb()} on {CompletedOn.Value.ToString("d")}.");
+            if (StartedOn is not null) sb.Append($"Started {Type.ToVerb()} on {StartedOn.Value.ToString("d")}");
+            if (CompletedOn is not null) sb.Append($"Finished {Type.ToVerb()} on {CompletedOn.Value.ToString("d")}");
             if (StartedOn is not null || CompletedOn is not null) sb.AppendLine();
 
-            sb.AppendLine("Notes: " + (string.IsNullOrWhiteSpace(Notes) ? "(none)." : Notes));
+            if (!string.IsNullOrWhiteSpace(ProgressNote)) sb.AppendLine($"Progress: {ProgressNote}");
+            sb.AppendLine("Notes: " + (string.IsNullOrWhiteSpace(Notes) ? "(none)" : Notes));
             sb.AppendLine("Rating: " + (Rating is null ? "-" : Rating.Value.ToString("0.#")) + "/10");
             sb.AppendLine();
             sb.Append($"(Added: {AddedOn.ToString("g")}. Last Updated: {LastUpdated.ToString("g")})");

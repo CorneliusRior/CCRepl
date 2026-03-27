@@ -153,8 +153,25 @@ namespace ReadingList.Commands
                                 .Exec(MediaNoteAppend)
                                 .Usage("Media.Note.Append <int Id> [string Note]")
                                 .Description("Appends text to the end of a note.")
+                                .Build(),
+
+                            Cmd("Progress")
+                                .Aliases("Prog", "ProgNote", "pn", "ProgressNote")
+                                .Exec(MediaProgress)
+                                .Usage("Media.Progress <int Id> [string Note]")
+                                .Description("Sets Progress note")
+                                .LongDescription("Sets the progress note for the specified media item. Will override anything that exists there presently.\nThe idea of a progress note is to note where you last left off so you know where to pick up next time, a book mark essentially, e.g. \"Chapter 5\", \"Episode 5\", \"1hr 5mins in\", &c.\nCanonical version of this command is 'Media.Progress'.")
                                 .Build()
+
                         )
+                        .Build(),
+
+                    Cmd("Progress")
+                        .Aliases("Prog", "ProgNote", "pn", "ProgressNote")
+                        .Exec(MediaProgress)
+                        .Usage("Media.Progress <int Id> [string Note]")
+                        .Description("Sets Progress note")
+                        .LongDescription("Sets the progress note for the specified media item. Will override anything that exists there presently.\nThe idea of a progress note is to note where you last left off so you know where to pick up next time, a book mark essentially, e.g. \"Chapter 5\", \"Episode 5\", \"1hr 5mins in\", &c.\nFor a more permanant record, see 'Media.Notes'.")
                         .Build(),
 
                     Cmd("Delete")

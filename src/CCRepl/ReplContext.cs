@@ -20,6 +20,12 @@ public sealed class ReplContext
     public int OneLineMaxWidth => _repl.OneLineMaxWidth;
 
     // IO:
+    /// <summary>
+    /// Prints 'prompt', returns whatever user types as a string. Used for raw input.
+    /// </summary>
+    /// <param name="prompt"></param>
+    /// <param name="ct"></param>
+    /// <returns></returns>
     public Task<string> ReadLineAsync(string prompt, CancellationToken ct) => _repl.ReadLineAsync(prompt, ct);
     public void WriteLine(string msg = "") => _repl.WriteLine(msg);
     public void Write(string msg) => _repl.Write(msg);
