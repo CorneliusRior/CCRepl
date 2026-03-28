@@ -13,7 +13,10 @@ namespace CCRepl
         /// int x = await ctx.RequestAsync("Enter Number:", s => (int.TryParse(s, out int v), v), 0);
         /// </summary>
         /// <example>
-        /// int x = await ctx.RequestAsync("Enter Number:", s => (int.TryParse(s, out int v), v), 0);
+        /// int x = await ctx.RequestAsync(ct,
+        ///     "Enter Number:", 
+        ///     s => (int.TryParse(s, out int v), v), 
+        ///     0);
         /// </example>
         /// <typeparam name="T"></typeparam>
         /// <param name="ctx"></param>
@@ -22,17 +25,17 @@ namespace CCRepl
         /// <param name="fallBack"></param>
         /// <returns></returns>
         /// <exception cref="ReplUserException"></exception>
-        public static async Task<T> RequestAsync<T>(this ReplContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T Value)> parser, T? fallBack = default)
+        public static async Task<T> RequestAsync<T>(this ReplContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T value)> parser, T? fallBack = default)
         {
             string input = await ctx.ReadLineAsync(prompt, ct);
             var result = parser(input);
-            if (result.success) return result.Value;
+            if (result.success) return result.value;
             if (fallBack is not null) return fallBack;
             throw new ReplUserException($"Cannot parse '{input}'");
         }
 
         /// <summary>
-        /// Used to parse and accept input of any type, returns fallback if input is among specified defaultStrings. If no default strings are specified, is is equal to [" ", "Default", "Fallback"].
+        /// Used to parse and accept input of any type, returns fallback if input is among specified defaultStrings. If no default strings are specified, is is equal to [" ", "Default", "Fallback"]. Throws exception if cannot parse.
         /// Used like:
         /// int x = ctx.RequestAsync(
         ///     "Enter Number:",
@@ -55,25 +58,25 @@ namespace CCRepl
         /// <param name="defaultStrings"></param>
         /// <returns></returns>
         /// <exception cref="ReplUserException"></exception>
-        public static async Task<T> RequestAsync<T>(this ReplContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T Value)> parser, T fallBack, params string[] defaultStrings)
+        public static async Task<T> RequestAsync<T>(this ReplContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T value)> parser, T fallBack, params string[] defaultStrings)
         {
             string input = await ctx.ReadLineAsync(prompt, ct);
             if (defaultStrings.Any(s => string.Equals(s, input, StringComparison.OrdinalIgnoreCase))) return fallBack;
             var result = parser(input);
-            if (result.success) return result.Value;
+            if (result.success) return result.value;
             throw new ReplUserException($"Cannot parse '{input}'");
         }
 
         /// <summary>
         /// Used to parse and accept input of any type. If cannot parse, will ask again. Used like:
-        /// int x = await ctx.RequireAsync(
+        /// int x = await ctx.RequireAsync(ct,
         ///     "Enter Number:", 
         ///     s => (int.TryParse(s, out int v), v),
         ///     "Could not parse, please try again." 
         ///     );
         /// </summary>
         /// <example>
-        /// int x = await ctx.RequireAsync(
+        /// int x = await ctx.RequireAsync(ct,
         ///     "Enter Number:", 
         ///     s => (int.TryParse(s, out int v), v),
         ///     "Could not parse, please try again." 
@@ -85,7 +88,7 @@ namespace CCRepl
         /// <param name="retryPrompt"></param>
         /// <param name="parser"></param>
         /// <returns></returns>
-        public static async Task<T> RequireAsync<T>( this ReplContext ctx, CancellationToken ct,  string prompt, Func<string, (bool success, T Value)> parser, string retryPrompt)
+        public static async Task<T> RequireAsync<T>(this ReplContext ctx, CancellationToken ct,  string prompt, Func<string, (bool success, T Value)> parser, string retryPrompt)
         {
             while (true)
             {
@@ -97,7 +100,7 @@ namespace CCRepl
         /// <summary>
         /// Used to parse and accept input of any type. If cannot parse, will ask again. If Input is one of the default strings, will return fallback. If no default strings are specified, it is equal to [" ", "Default", "Fallback"].
         /// Used like:
-        /// int x = await ctx.RequireAsync(
+        /// int x = await ctx.RequireAsync(ct,
         ///     "Enter Number:", 
         ///     s => (int.TryParse(s, out int v), v),
         ///     "Could not parse, please try again.",
@@ -105,7 +108,7 @@ namespace CCRepl
         ///     );
         /// </summary>
         /// <example>
-        /// int x = await ctx.RequireAsync(
+        /// int x = await ctx.RequireAsync(ct,
         ///     "Enter Number:", 
         ///     s => (int.TryParse(s, out int v), v),
         ///     "Could not parse, please try again.",
@@ -120,8 +123,7 @@ namespace CCRepl
         /// <param name="fallBack"></param>
         /// <param name="defaultStrings"></param>
         /// <returns></returns>
-        public static async Task<T> RequireAsync<T>(this ReplContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T Value)> parser, string retryPrompt, T fallBack, params string[] defaultStrings
-            )
+        public static async Task<T> RequireAsync<T>(this ReplContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T Value)> parser, string retryPrompt, T fallBack, params string[] defaultStrings)
         {
             if (defaultStrings.Length == 0) defaultStrings = [" ", "default", "fallback"];
             while (true)
@@ -160,6 +162,59 @@ namespace CCRepl
             if (string.IsNullOrWhiteSpace(input)) return null;
             else return input;
         }
+
+        /// <summary>
+        /// Used for optional settings when maintaining defaults. If input is null or whitespace, will return null. If input is '_', will return fallback.
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="ct"></param>
+        /// <param name="prompt"></param>
+        /// <param name="fallBack"></param>
+        /// <returns></returns>
+        public static async Task<string?> RequestStringOrDefaultNullable(this ReplContext ctx, CancellationToken ct, string prompt, string? fallBack)
+        {
+            string? input = await ctx.ReadLineAsync(prompt, ct);
+            if (string.IsNullOrWhiteSpace(input)) return null;
+            if (input.Trim() == "_") return fallBack;
+            else return input;
+        }
+
+        /// <summary>
+        /// Used for optional settings and maintaining non-nullable defaults. If input is null or whitespace, or equal to '_', will return fallback.
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="ct"></param>
+        /// <param name="prompt"></param>
+        /// <param name="fallBack"></param>
+        /// <returns></returns>
+        public static async Task<string> RequestStringOrDefault(this ReplContext ctx, CancellationToken ct, string prompt, string fallBack)
+        {
+            string input = await ctx.ReadLineAsync(prompt, ct);
+            if (string.IsNullOrWhiteSpace(input)) return fallBack;
+            if (input.Trim() == "_") return fallBack;
+            else return input;
+        }
+
+        /// <summary>
+        /// Used for required settings when maintaining defaults. If Input is null or whitespace, will retry. If input is '_', will return fallback.
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="ct"></param>
+        /// <param name="prompt"></param>
+        /// <param name="retryPrompt"></param>
+        /// <param name="fallBack"></param>
+        /// <returns></returns>
+        public static async Task<string> RequireStringOrDefault(this ReplContext ctx, CancellationToken ct, string prompt, string retryPrompt, string fallBack)
+        {
+            while (true)
+            {
+                string input = await ctx.ReadLineAsync(prompt, ct);
+                if (input == "_") return fallBack;
+                else if (!string.IsNullOrWhiteSpace(input)) return input;
+                else ctx.WriteLine(retryPrompt);
+            }
+        }
+
         /// <summary>
         /// Finds a command in dictionary. If it is left blank, returns every command. If it cannot be found in dictionary, will return findings in Aliases.
         /// </summary>

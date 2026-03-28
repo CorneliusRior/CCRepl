@@ -2,6 +2,7 @@
 using CCRepl.Models;
 using CCRepl.Tools;
 using ReadingList.Models;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace ReadingList.Commands
@@ -10,12 +11,58 @@ namespace ReadingList.Commands
     {
         private Task MediaAdd(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
         {
+            // Mandatory arguments use "args.[Type]()"
             string title = args.String(0, "Title");
+
+            // Types without dedicated extractors need to be manually converted after:
             string typeStr = args.String(1, "Type");
-
             if (!typeStr.TryToMediaType(out MediaType type)) throw new ReplUserException($"Could not parse type '{typeStr}'.");
-            string statStr = args.String(2, "Status");
 
+            string statStr = args.String(2, "Status");
+            if (!statStr.TryToMediaStatus(out MediaStatus status)) throw new ReplUserException($"Could not parse status '{statStr}'.");
+
+            // Optional/Nullable arguments can use nullable extractors:
+            int? releaseYear = args.IntOrNullable(3, "Release Year", null);
+            string? genre = args.StringNullableOrDefault(4, "Genre", null);
+            string? creator = args.StringNullableOrDefault(5, "Creator", null);
+            DateTime? startedOn = args.dateTimeOrNullable(6, "Started On", null);
+            DateTime? completedOn = args.dateTimeOrNullable(7, "Ended On", null);
+            string? progressNote = args.StringNullableOrDefault(8, "Progress Note", null);
+            string? notes = args.StringNullableOrDefault(9, "Notes", null);
+            double? rating = args.DoubleOrNullable(10, "Rating", null);
+
+            _service.AddMedia(new Media(title, type, status, releaseYear, genre, creator, startedOn, completedOn, progressNote, notes, rating));
+            
+            // Always provide feedback upon success:
+            ctx.WriteLine($"Added entry #{_service.GetLastId()}");
+            return Task.CompletedTask;
+        }        
+
+        private Task MediaAdd(ReplContext ctx, MediaAddPayload pl, CancellationToken ct)
+        {
+            // JSON overload. Uses "Payload" record.
+
+            // Custom types/enums must be converted:
+            MediaType type = pl.Type.ToMediaType();
+            MediaStatus status = pl.Status.ToMediaStatus();
+
+            _service.AddMedia(new Media(pl.Title, type, status, pl.ReleaseYear, pl.Genre, pl.Creator, pl.StartedOn, pl.CompletedOn, pl.ProgressNotes, pl.Notes, pl.Rating));
+
+            // Feedback should be brief:
+            ctx.WriteLine($"Added entry {_service.GetById(_service.GetLastId()).PrintRef()}");
+            return Task.CompletedTask;
+        }
+
+        private Task<bool> MediaAddTest(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            // Use the same data extraction logic.
+            string title = args.String(0, "Title");
+
+            // You can have these return as "False" if you prefer, but you will not get information from exceptions. Test is considered a failure if there are any exceptions:
+            string typeStr = args.String(1, "Type");
+            if (!typeStr.TryToMediaType(out MediaType type)) throw new ReplUserException($"Could not parse type '{typeStr}'.");
+
+            string statStr = args.String(2, "Status");
             if (!statStr.TryToMediaStatus(out MediaStatus status)) throw new ReplUserException($"Could not parse status '{statStr}'.");
 
             int? releaseYear = args.IntOrNullable(3, "Release Year", null);
@@ -27,39 +74,85 @@ namespace ReadingList.Commands
             string? notes = args.StringNullableOrDefault(9, "Notes", null);
             double? rating = args.DoubleOrNullable(10, "Rating", null);
 
-            _service.AddMedia(new Media(title, type, status, releaseYear, genre, creator, startedOn, completedOn, progressNote, notes, rating));
+            Media Sample = new Media(title, type, status, releaseYear, genre, creator, startedOn, completedOn, progressNote, notes, rating);
 
-            ctx.WriteLine($"Added entry #{_service.GetLastId()}");
-
-            return Task.CompletedTask;
+            // If you set this as "async Task<bool> MediaAddTest()" this can just be "Return true;"
+            return Task.FromResult(true);
         }
 
-        private async Task MediaAddPrompt(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        private Task<bool> MediaAddTest(ReplContext ctx, MediaAddPayload pl, CancellationToken ct)
         {
+            // JSON Tester. You usually do not need one of these! Testing of parsing payload is done automatically. Only use these if you need some conversion logic, or information which does not exist in the payload.
+
+            MediaType type = pl.Type.ToMediaType();
+            MediaStatus status = pl.Status.ToMediaStatus();
+
+            Media Sample = new Media(pl.Title, type, status, pl.ReleaseYear, pl.Genre, pl.Creator, pl.StartedOn, pl.CompletedOn, pl.ProgressNotes, pl.Notes, pl.Rating);
+
+            return Task.FromResult(true);
+        }
+
+        private async Task MediaAddPromptAsync(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            // Announcing command:
             ctx.WriteLine("Add Media Item.");
+
+            // For required string arguments, use "RequireString()". This does not accept null/whitespace arguments.
             string title = await ctx.RequireString(ct, "Title: ", "Title cannot be blank, please try again.");
+
+            // For non-string required arguments, use "RequireAsync()".
             MediaType type = await ctx.RequireAsync(ct, "Media type: ",
                 s => (s.TryToMediaType(out MediaType v), v),
                 $"Could not parse. Valid media types are: {MediaTypeExt.MediaTypeList}.");
             MediaStatus status = await ctx.RequireAsync(ct, "Status: ",
                 s => (s.TryToMediaStatus(out MediaStatus v), v),
                 $"Could not parse. Valid media statuses are: {MediaStatusExt.MediaStatusList}.");
+
+            // For non-string optional arguments, you can use "RequestAsync()" or "RequireAsync()" with cancellation strings (see below).
             int? releaseYear = await ctx.RequestAsync<int?>(ct, "Release year (optional): ",
                 s => (int.TryParse(s, out int v), v), null);
+
+            // For optional string arguments, there are a couple of options. RequestStringNullable returns null if null or whitespace:
             string? genre = await ctx.RequestStringNullable(ct, "Genre (optional): ");
             string? creator = await ctx.RequestStringNullable(ct, "Creator (author, director, studio, &c., optional): ");
-            DateTime? startedOn = await ctx.RequireAsync<DateTime?>(ct, "Start date, if known, and have started (optional, leave blank, 'null', or 'not started' otherwise): ",
-                s => (DateTime.TryParse(s, out DateTime v), v), "Could not parse, please try again.", null, "", " ", "_", "null", "notstarted", "not started");
-            DateTime? completedOn = await ctx.RequireAsync<DateTime?>(ct, "Completion date, if known, and have finished (optional, leave blank, 'null', or 'unfinished' otheriwse): ",
-                s => (DateTime.TryParse(s, out DateTime v), v), "Could not parse, please try again.", null, "", " ", "_", "null", "unfinished", "notfinished");
+
+            // Cancellation strings can be used with RequireAsync() if you want explicit confirmation of no entry for non-string optional arguments. 
+            DateTime? startedOn = await ctx.RequireAsync<DateTime?>(ct, 
+                "Start date, if known, and have started (optional, leave blank, 'null', or 'not started' otherwise): ",
+                s => (DateTime.TryParse(s, out DateTime v), v), 
+                "Could not parse, please try again.", null, "", " ", "_", "null", "notstarted", "not started");
+            DateTime? completedOn = await ctx.RequireAsync<DateTime?>(ct, 
+                "Completion date, if known, and have finished (optional, leave blank, 'null', or 'unfinished' otheriwse): ",
+                s => (DateTime.TryParse(s, out DateTime v), v), 
+                "Could not parse, please try again.", null, "", " ", "_", "null", "unfinished", "notfinished");
+
             string? progressNote = await ctx.RequestStringNullable(ct, "Note on progress (e.g. 'Chapter 20', 'Episode 5', '1hr 20mins', optional): ");
             string? notes = await ctx.RequestStringNullable(ct, "Other notes (optional): ");
-            double? rating = await ctx.RequireAsync<double?>(ct, "Rate out of 10 (optional, leave blank, 'null', or 'unrated' otherwise): ",
+            double? rating = await ctx.RequireAsync<double?>(ct, 
+                "Rate out of 10 (optional, leave blank, 'null', or 'unrated' otherwise): ",
                 s => (double.TryParse(s, out double v), v), "Could not parse, please try again.", null, "", " ", "_", "null", "unrated", "idk");
 
             _service.AddMedia(new Media(title, type, status, releaseYear, genre, creator, startedOn, completedOn, progressNote, notes, rating));
 
             ctx.WriteLine($"Added entry #{_service.GetLastId()}");
+        }        
+
+        private Task MediaEdit(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            throw new NotImplementedException();
+        }
+
+        private async Task MediaEditAsync(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            int? id = args.IntOrNull(0, "Id");
+            if (id is null) id = await ctx.RequireAsync(ct, "Enter entry ID: ", s => (int.TryParse(s, out int v), v), "Could not parse, please try again.");
+            Media entry = _service.GetById(id.Value);
+            ctx.WriteLine(entry.PrintInfo());
+
+            entry.Title = await ctx.RequestStringOrDefault(ct, "Title (leave blank, or '_' to keep unchanged): ", entry.Title);
+            entry.Type = await ctx.RequireAsync(ct, "Media type (leave blank, or '_' to keep unchanged): ", s => (s.TryToMediaType(out MediaType v), v), "Could not parse, please try again.", entry.Type, "", "_");
+            entry.Status = await ctx.RequireAsync(ct, "Status (leave blank, or '_' to keep unchanged): ", s => (s.TryToMediaStatus(out MediaStatus v), v), "Could not parse, please try again.",entry.Status, "", "_");
+            
         }
 
         private Task MediaList(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
@@ -391,5 +484,7 @@ namespace ReadingList.Commands
         }
 
         private sealed record StatSummary(int Count, Dictionary<MediaType, List<Media>> TypeList, Dictionary<MediaStatus, List<Media>> StatusList);
+
+        private sealed record MediaAddPayload(string Title, string Type, string Status, int? ReleaseYear, string? Genre, string? Creator, DateTime? StartedOn, DateTime? CompletedOn, string? ProgressNotes, string? Notes, double? Rating);
     }
 }

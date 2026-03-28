@@ -27,6 +27,9 @@ namespace ReadingList.Commands
                     Cmd("Add")
                         .Aliases("a", "+", "New", "nw", "AddNew")
                         .Exec(MediaAdd)
+                        .Test(MediaAddTest)
+                        .ExecJson<MediaAddPayload>(MediaAdd)
+                        .TestJson<MediaAddPayload>(MediaAddTest)
                         .Usage("Media.Add <string Title> <string Type> <string Status> [int Release Year] [string Genre] [DateTime StartedOn] [DateTime FinishedOn] [string ProgressNote] [string Notes] [double Rating]")
                         .Description("Add a new piece of media to the list.")
                         .AddExample("Media.Add Thunderbirds Show InProgress 1965 _ \"Gerry Anderson\" 07-03-2026 _ \"Episode 23\" _ 10")
@@ -37,9 +40,23 @@ namespace ReadingList.Commands
                             Cmd("Prompt")
                                 .Aliases("p", "pmpt", "pmt", "async")
                                 .Description("Adds a new piece of media through input prompts.")
-                                .Exec(MediaAddPrompt)
+                                .Exec(MediaAddPromptAsync)
                                 .Build()
 
+                        )
+                        .Build(),
+
+                    Cmd("Edit")
+                        .Aliases("e", "update", "updt", "u")
+                        .Exec(MediaEdit)
+                        .Usage("Media.Edit <int Id> [string Title] [string Type] [string Status] [int Release Year] [string Genre] [DateTime StartedOn] [DateTime FinishedOn] [string ProgressNote] [string Notes] [double Rating]")
+                        .Children
+                        (
+                            Cmd("Promopt")
+                                .Aliases("p", "pmpt", "pmt", "async")
+                                .Exec(MediaEditAsync)
+                                .Usage("Media.Edit.Prompt [int Id]")
+                                .Build()
                         )
                         .Build(),
 
