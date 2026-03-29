@@ -19,6 +19,9 @@ namespace ReadingList.Commands
 
         public IReadOnlyList<ReplCommand> Commands =>
         [
+            Cmd("duplicate").Build(),
+            //Cmd("duplicate").Build(),
+
             Cmd("Media")
                 .Aliases("m", "md", "Read", "ReadingList", "rd", "rdl")
                 .Description("Commands for interacting with media items.")
@@ -52,7 +55,7 @@ namespace ReadingList.Commands
                         .Usage("Media.Edit <int Id> [string Title] [string Type] [string Status] [int Release Year] [string Genre] [DateTime StartedOn] [DateTime FinishedOn] [string ProgressNote] [string Notes] [double Rating]")
                         .Children
                         (
-                            Cmd("Promopt")
+                            Cmd("Prompt")
                                 .Aliases("p", "pmpt", "pmt", "async")
                                 .Exec(MediaEditAsync)
                                 .Usage("Media.Edit.Prompt [int Id]")

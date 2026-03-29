@@ -127,7 +127,7 @@ public static class StringHelpers
         if (rightMargin is not null) foreach (string l in input) inter.Add(l.Truncate(rightMargin.Value));
         else inter = input;
 
-        if (inter.Count == 1) return inter[1];
+        if (inter.Count == 1) return inter[0];
         StringBuilder sb = new();
         sb.AppendLine(inter[0]);
         foreach (string l in inter.Skip(1)) sb.AppendLine(new string(' ', leftMargin) + l);

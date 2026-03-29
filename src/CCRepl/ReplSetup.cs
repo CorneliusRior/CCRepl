@@ -31,7 +31,7 @@ public sealed partial class Repl
         commandHead.Add(command.Name);        
         command.Address = string.Join('.', commandHead);
         // put a try argument here: crashes when you have multiple commands with same name.
-        CommandIndex.Add(command.Address, command);
+        if (!CommandIndex.TryAdd(command.Address, command)) throw new ReplException($"Duplicate command address: '{command.Address}'. Repl will not build.");
         foreach (ReplCommand child in command.Children.OrderBy(c => c.Name).ToList()) AssignChildAddress(child, commandHead);
         commandHead.RemoveAt(commandHead.Count - 1);
     }
@@ -45,7 +45,7 @@ public sealed partial class Repl
             addresses.AddRange(root.Aliases);
             foreach (string alias in addresses)
             {
-                if (!AliasIndex.TryAdd(alias, root)) throw new ReplException($"Duplicate command or alias address: '{alias}' in '{root.Name}' ('{(root.Address ?? "Unknown address")}')");
+                if (!AliasIndex.TryAdd(alias, root)) throw new ReplException($"Duplicate command or alias address: '{alias}' in '{root.Name}' ('{(root.Address ?? "Unknown address")}'. Repl will not build.)");
                 foreach (ReplCommand child in root.Children)
                 {
                     AliasDictionaryAdd(alias, child);

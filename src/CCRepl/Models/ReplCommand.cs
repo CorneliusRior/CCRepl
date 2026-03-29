@@ -77,7 +77,7 @@ public class ReplCommand
             HelpAttribute.Usage             => Usage ?? "",
             HelpAttribute.Description       => Description ?? "",
             HelpAttribute.Examples          => Examples.ToList().AlignList(col1space, col2space),
-            HelpAttribute.LongDescription   => LongDescription ?? "",
+            HelpAttribute.LongDescription   => LongDescription?.Wrap(col2space).AlignList(col1space, col2space) ?? "",
             _ => "-"
         };
         if (oneline) return col1 + col2.Truncate(col2space);
