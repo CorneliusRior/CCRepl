@@ -51,47 +51,48 @@ After defining a `MediaService` Class required for `MediaCommands` to function:
 
 ```csharp
 
-// Define Repl object w/ command set.
-Repl repl = new(new MediaCommands(service));
-
-// Assign input & output handlers:
-repl.ReqWrite += msg => Console.Write(msg);
-repl.ReqWriteLine += msg => Console.WriteLine(msg);
-repl.ReqInputAsync = (prompt, ct) =>
+try
 {
-    Console.WriteLine(prompt);
-    Console.Write("> ");
-    string input = Console.ReadLine() ?? "";
-    return Task.FromResult(input);
-};
+    // Define Repl object w/ command set.
+    Repl repl = new(new MediaCommands(service));
 
-// Print startup message:
-Console.WriteLine("CCRepl ReadingList.");
-Console.WriteLine("Type 'help' for commands.");
-Console.WriteLine("Type 'clear' to clear screen.");
+    // Assign input & output handlers:
+    repl.ReqWrite += msg => Console.Write(msg);
+    repl.ReqWriteLine += msg => Console.WriteLine(msg);
+    repl.ReqInputAsync = (prompt, ct) =>
+    {
+        Console.WriteLine(prompt);
+        Console.Write("> ");
+        string input = Console.ReadLine() ?? "";
+        return Task.FromResult(input);
+    };
 
-// Main input loop:
-while (true)
-{
-    // Await input:
-    Console.Write("> ");
-    string? line = Console.ReadLine();
+    // Print startup message:
+    Console.WriteLine("CCRepl ReadingList.");
+    Console.WriteLine("Type 'help' for commands.");
+    Console.WriteLine("Type 'clear' to clear screen.");
 
-    // Receive input, process before handing it over to repl:
-    if (string.IsNullOrWhiteSpace(line)) continue;
-    if (line.Equals("exit", StringComparison.OrdinalIgnoreCase)) break;
-    if (line.Equals("clear", StringComparison.OrdinalIgnoreCase)) Console.Clear();
+    // Main input loop:
+    while (true)
+    {
+        Console.Write("> ");
+        string? line = Console.ReadLine();
 
-    // Execute:
-    await repl.ExecuteAsync(line);
+        // Receive input, process before handing it over to repl:
+        if (string.IsNullOrWhiteSpace(line)) continue;
+        if (line.Equals("exit", StringComparison.OrdinalIgnoreCase)) break;
+        if (line.Equals("clear", StringComparison.OrdinalIgnoreCase)) Console.Clear();
+        await repl.ExecuteAsync(line);
+    }
 }
-
-// Print exit message:
-Console.WriteLine("Exiting...");
+catch (ReplException ex) { Console.WriteLine($"{ex.Location} {ex.Message}"); }
+finally { Console.WriteLine("Exiting..."); }
 
 ```
 
 REPL systems will likely follow this pattern, though `CCRepl` systems can function so long as there's an execution method (such as `ExecuteAsync()`, but you could also use `ExecuteJsonAsync()` or `ExecuteScriptAsync()` instead) and some way to provide input from a prompt to `ReqInputAsync`.
+
+The `try {} catch {}` statement is not necessary, but in the event of duplicate commands, this will catch it and inform you, before closing the program, instead of crashing without warning. `ReplException` contains a property `Location` which can be useful for debugging.
 
 ### ReadingList.Cli
 
@@ -99,66 +100,68 @@ Implementation with `ConsoleInputEditor` is more flexible, allows for keystroke 
 
 ```csharp
 
-// Define Repl object w/ command set.
-Repl repl = new(new MediaCommands(service));
-
-// History:
-List<string> history = [];
-
-// Assign input & output handlers:
-repl.ReqWrite += msg => Console.Write(msg);
-repl.ReqWriteLine += msg => Console.WriteLine(msg);
-repl.ReqInputAsync = async (prompt, ct) =>
+try
 {
-    Console.WriteLine(prompt);
-    ConsoleInputEditor editor = new("> ", history);
-    ConsoleResult result = await editor.ReadLineAsync(ct);
-    if (result.Cancelled) throw new OperationCanceledException(ct);
-    return result.Text;
-};
+    // Define Repl object w/ command set.
+    Repl repl = new(new MediaCommands(service));
 
-// Print startup message:
-Console.WriteLine("CCRepl ReadingList.");
-Console.WriteLine("Type 'help' for commands.");
-Console.WriteLine("Type 'clear' to clear screen.");
+    // History:
+    List<string> history = [];
 
-// Main input loop:
-while (true)
-{
-    // Await input:
-    ConsoleInputEditor editor = new("> ", history);
-    ConsoleResult result = await editor.ReadLineAsync();
-    
-    // Receive input, process before handing it over to repl:
-    if (result.Cancelled) continue;
-    string input = result.Text;
-    if (string.IsNullOrWhiteSpace(input)) continue;
-    if (input.Equals("exit", StringComparison.OrdinalIgnoreCase)) break;
-    if (input.Equals("clear", StringComparison.OrdinalIgnoreCase))
+    // Assign input & output handlers:
+    repl.ReqWrite += msg => Console.Write(msg);
+    repl.ReqWriteLine += msg => Console.WriteLine(msg);
+    repl.ReqInputAsync = async (prompt, ct) =>
     {
-        Console.Clear();
-        continue;
-    }
+        Console.WriteLine(prompt);
+        ConsoleInputEditor editor = new("> ", history);
+        ConsoleResult result = await editor.ReadLineAsync(ct);
+        if (result.Cancelled) throw new OperationCanceledException(ct);
+        return result.Text;
+    };
 
-    // Define variables for cancellation:
-    using CancellationTokenSource cts = new();
-    Task keyWatcher = InputHelpers.ConsoleCancelKeyWatcher(cts, ConsoleKey.Escape);
+    // Print startup message:
+    Console.WriteLine("CCRepl ReadingList.");
+    Console.WriteLine("Type 'help' for commands.");
+    Console.WriteLine("Type 'clear' to clear screen.");
 
-    // Execute, watching for cancellation:
-    try { await repl.ExecuteAsync(input, cts.Token); }
-    catch (OperationCanceledException) { Console.WriteLine("Cancelled."); }
-
-    // Finally, dispose of keywatcher & handle exceptions:
-    finally
+    // Main input loop:
+    while (true)
     {
-        cts.Cancel();
-        try { await keyWatcher; }
-        catch (OperationCanceledException) { }
+        // Await input:
+        ConsoleInputEditor editor = new("> ", history);
+        ConsoleResult result = await editor.ReadLineAsync();
+
+        // Receive input, process before handing it over to repl:
+        if (result.Cancelled) continue;
+        string input = result.Text;
+        if (string.IsNullOrWhiteSpace(input)) continue;
+        if (input.Equals("exit", StringComparison.OrdinalIgnoreCase)) break;
+        if (input.Equals("clear", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Clear();
+            continue;
+        }
+
+        // Define variables for cancellation:
+        using CancellationTokenSource cts = new();
+        Task keyWatcher = InputHelpers.ConsoleCancelKeyWatcher(cts, ConsoleKey.Escape);
+
+        // Execute, watching for cancellation:
+        try { await repl.ExecuteAsync(input, cts.Token); }
+        catch (OperationCanceledException) { Console.WriteLine("Cancelled."); }
+
+        // Finally, dispose of keywatcher & handle exceptions:
+        finally
+        {
+            cts.Cancel();
+            try { await keyWatcher; }
+            catch (OperationCanceledException) { }
+        }
     }
 }
-
-// Print exit message: 
-Console.WriteLine("Exiting...");
+catch (ReplException ex) { Console.WriteLine($"{ex.Location} {ex.Message}"); }
+finally { Console.WriteLine("Exiting..."); }
 
 ```
 
@@ -225,31 +228,31 @@ Here is how we define the root command `Media`, commands `Media.Add` and `Media.
 public IReadOnlyList<ReplCommand> Commands =>
 [
     Cmd("Media")
-        .Aliases("m", "md", "Read", "ReadingList", "rd", "rdl")
-        .Description("Commands for interacting with media items.")
-        .Children
-        (
-            Cmd("Add")
-                .Aliases("a", "+", "New", "nw", "AddNew")
-                .Exec(MediaAdd)
-                .Test(MediaAddTest)
-                .ExecJson<MediaAddPayload>(MediaAdd)
-                .TestJson<MediaAddPayload>(MediaAddTest)
-                .Usage("Media.Add <string Title> <string Type> <string Status> [int Release Year] [string Genre] [DateTime StartedOn] [DateTime FinishedOn] [string ProgressNote] [string Notes] [double Rating]")
-                .Description("Add a new piece of media to the list.")
-                .AddExample("Media.Add Thunderbirds Show InProgress 1965 _ \"Gerry Anderson\" 07-03-2026 _ \"Episode 23\" _ 10")
-                .AddExample("Media.Add \"Moby Dick\" Book Dropped 1851 _ \"Herman Melville\" _ _ _ \"Gave up, too boring, not as good as Thunderbirds (1965)\" 2.5")
-                .AddExample("m.+ \"Romance of the Three Kingdoms\" Book InProgress _ Romance \"Attributed to Luo GuangZhong\" 01-01-2026 _ \"Chapter 64\"")                        
-                .Children
-                (
-                    Cmd("Prompt")
-                        .Aliases("p", "pmpt", "pmt", "async")
-                        .Description("Adds a new piece of media through input prompts.")
-                        .Exec(MediaAddPromptAsync)
-                        .Build()
+    .Aliases("m", "md", "Read", "ReadingList", "rd", "rdl")
+    .Description("Commands for interacting with media items.")
+    .Children
+    (
+        Cmd("Add")
+        .Aliases("a", "+", "New", "nw", "AddNew")
+        .Exec(MediaAdd)
+        .Test(MediaAddTest)
+        .ExecJson<MediaAddPayload>(MediaAdd)
+        .TestJson<MediaAddPayload>(MediaAddTest)
+        .Usage("Media.Add <string Title> <string Type> <string Status> [int Release Year] [string Genre] [DateTime StartedOn] [DateTime FinishedOn] [string ProgressNote] [string Notes] [double Rating]")
+        .Description("Add a new piece of media to the list.")
+        .AddExample("Media.Add Thunderbirds Show InProgress 1965 _ \"Gerry Anderson\" 07-03-2026 _ \"Episode 23\" _ 10")
+        .AddExample("Media.Add \"Moby Dick\" Book Dropped 1851 _ \"Herman Melville\" _ _ _ \"Gave up, too boring, not as good as Thunderbirds (1965)\" 2.5")
+        .AddExample("m.+ \"Romance of the Three Kingdoms\" Book InProgress _ Romance \"Attributed to Luo GuangZhong\" 01-01-2026 _ \"Chapter 64\"")                        
+        .Children(
 
-                )
-                .Build(),
+            Cmd("Prompt")
+            .Aliases("p", "pmpt", "pmt", "async")
+            .Description("Adds a new piece of media through input prompts.")
+            .Exec(MediaAddPromptAsync)
+            .Build()
+
+        )
+        .Build(),
 
     // ...
 ];

@@ -9,9 +9,10 @@ Directory.CreateDirectory(dataDir);
 string dataPath = Path.Combine(dataDir, "ReadingList.db");
 MediaService service = new($"Data Source={dataPath}");
 
-// Define Repl object w/ command set.
+
 try
 {
+    // Define Repl object w/ command set.
     Repl repl = new(new MediaCommands(service));
 
     // History:
@@ -68,8 +69,6 @@ try
             catch (OperationCanceledException) { }
         }
     }
-
-    // Print exit message: 
-    Console.WriteLine("Exiting...");
 }
 catch (ReplException ex) { Console.WriteLine($"{ex.Location} {ex.Message}"); }
+finally { Console.WriteLine("Exiting..."); }

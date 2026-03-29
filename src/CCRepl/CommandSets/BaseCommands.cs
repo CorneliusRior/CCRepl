@@ -118,6 +118,7 @@ namespace CCRepl.CommandSets
                 .Description("Manually tests a Json command.")
                 .Group("Base")
                 .Build()
+
                 )
             .Build(),
 

@@ -23,45 +23,45 @@ public sealed class MyCommandSet : ICommandSet
 	public IReadOnlyList<ReplCommand> Commands =>
 	[
 		Cmd("MyCommand").
-			.Aliases("mc", "SampleCommand", "MyCmd")
-			.AddAlias("SampleCmd")
-			.Exec(MyCommandAsync)
-			.Test(MyCommandTestAsync)
-			.ExecJson<MyCommandPayload>(MyCommandJsonAsync)
-			.TestJson<MyCommandPayload>(MyCommandTestJsonAsync)
-			.Usage("MyCommand <int MyInt> <string MyString> [bool MyBool] [double? MyDouble]")
-			.Description("Sample command.")
-			.LongDescription("Sample command showing use of all CmdBuilder methods.")
-			.Examples(
-				"MyCommand 20 \"My String\" true",
-				"""
-				MyCommand
-				{
-					"MyInt": 20
-					"MyString": "My String"
-					"MyBool": true
-					"MyDouble": null
-				}
-				"""
-			)
-			.AddExample("MyCommand 50 Hello false 10.5")
-			.Remarks("This is just a place to keep notes.")
-			.Children(
-				Cmd("FirstSubCommand")
-					// ...
-				.Build(),
+		.Aliases("mc", "SampleCommand", "MyCmd")
+		.AddAlias("SampleCmd")
+		.Exec(MyCommandAsync)
+		.Test(MyCommandTestAsync)
+		.ExecJson<MyCommandPayload>(MyCommandJsonAsync)
+		.TestJson<MyCommandPayload>(MyCommandTestJsonAsync)
+		.Usage("MyCommand <int MyInt> <string MyString> [bool MyBool] [double? MyDouble]")
+		.Description("Sample command.")
+		.LongDescription("Sample command showing use of all CmdBuilder methods.")
+		.Examples(
+			"MyCommand 20 \"My String\" true",
+			"""
+			MyCommand
+			{
+				"MyInt": 20
+				"MyString": "My String"
+				"MyBool": true
+				"MyDouble": null
+			}
+			"""
+		)
+		.AddExample("MyCommand 50 Hello false 10.5")
+		.Remarks("This is just a place to keep notes.")
+		.Children(
+			Cmd("FirstSubCommand")
+			// ...
+			.Build(),
 
-				Cmd("SecondSubcommand")
-					// ...
-				.Build()
+			Cmd("SecondSubcommand")
+			// ...
+			.Build()
 
-			)
-			.AddChild(
-				Cmd("ThirdSubCommand")
-					//...
-				.Build()
+		)
+		.AddChild(
+			Cmd("ThirdSubCommand")
+			//...
+			.Build()
 
-			)
+		)
 		.Build()
 	]
 }
@@ -72,11 +72,10 @@ public sealed class MyCommandSet : ICommandSet
 
 `CommandBuilder` definitions can be formatted in any way, but it is recommended that this style be followed.
 - `Cmd(string name)` should be on its own line.
-- Every extension should be on its own line and indented once.
-- `Build()` should have the same indentation as the `Cmd()` statement.
+- Every extension should be on its own line.
 - Extensions should be in this general order (identical order to `ReplCommand` constructor).
 - `Children()` or `AddChild()` should always be the last extension used (if defined).
-- Every subcommand definition should have a one-line gap afterwards.
+- Every command definition should have a one-line gap afterwards.
 
 Multiple extensions can also be used on the same line for more compact code.
 
