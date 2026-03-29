@@ -1,5 +1,24 @@
 # Reading List
 
+## Contents
+
+- [Overview](#overview)
+- [Implementation](#implementation)
+    - [Checklist](#checklist)
+    - [ReadingList.CliBasic](#readinglist.clibasic)
+    - [ReadingList.Cli](#readinglist.cli)
+- [Defining Commands](#defining-commands)
+- [Add Command](#add-command) 
+    - [Media (Root Command)](#media-root-command)
+    - [Media.Add](#media.add)
+    - [Media.Add.Prompt](#media.add.prompt)
+- [Add Command Handlers](#add.command.handlers)
+    - [Media.Add Execute](#media.add-execute)
+    - [Media.Add.Prompt Execute](#media.add.prompt-execute)
+    - [Media.Add Test](#media.add-test)
+    - [Media.Add Json Execute](#media.add-json-execute)
+    - [Media.Add Json Test](#media.add-json-test)
+    - [Media.Add Script](#media.add-script)
 ## Overview
 
 ReadingList is a basic console application built with CCRepl. It consists of a `Media` model, SQL service for persistent storage of `Media` entries, and a command set. Despite the name of the program, "Media" can refer to any kind of media. Media entries can contain information about the title itself, information about progress reading (or otherwise consuming) entries as well as notes and a rating system.
@@ -10,12 +29,21 @@ This was built so as to serve as a working example for more complete documentati
 
 There are two different Console Applications based on the `ReadingList` class library.
 
-- `ReadingList.Cli` uses `ConsoleLineEditor` to handle input, which enables asynchronous cancellation (by pressing 'escape')
-- `ReadingList.CliBasic` uses the default console input, which is more stable, but without cancellation capability.
+- [`ReadingList.Cli`](#readinglist.cli) uses `ConsoleLineEditor` to handle input, which enables asynchronous cancellation (by pressing 'escape')
+- [`ReadingList.CliBasic`](#readinglist.clibasic) uses the default console input, which is more stable, but without cancellation capability.
 
 In future I will make a UI using WPF which can have the flexibility and stability of both. Generally I would recommend using `ConsoleLineEditor`, but have made both for the sake of example.
 
-Implementation of all CCRepl systems consists of assigning handlers for input and output, then defining the main input loop, these are two slightly different approaches to that:
+### Checklist
+
+The outer IO layer for a `CCRepl` system requires the following:
+
+1. Handler for `ReqWrite` ("Request Write").
+2. Handler for `ReqWriteLine`.
+3. Handler for `ReqInputAsync` which returns a `string`.
+4. Input loop
+
+Cli and CliBasic are two slightly different ways of doing this:
 
 ### ReadingList.CliBasic
 
@@ -49,7 +77,7 @@ while (true)
     Console.Write("> ");
     string? line = Console.ReadLine();
 
-    // Recieve input, process before handing it over to repl:
+    // Receive input, process before handing it over to repl:
     if (string.IsNullOrWhiteSpace(line)) continue;
     if (line.Equals("exit", StringComparison.OrdinalIgnoreCase)) break;
     if (line.Equals("clear", StringComparison.OrdinalIgnoreCase)) Console.Clear();
@@ -101,7 +129,7 @@ while (true)
     ConsoleInputEditor editor = new("> ", history);
     ConsoleResult result = await editor.ReadLineAsync();
     
-    // Recieve input, process before handing it over to repl:
+    // Receive input, process before handing it over to repl:
     if (result.Cancelled) continue;
     string input = result.Text;
     if (string.IsNullOrWhiteSpace(input)) continue;
@@ -137,22 +165,13 @@ Console.WriteLine("Exiting...");
 Implementation differs from the basic version in a couple of places:
 
 - History needs to be defined manually (Not done here, but persistent storage could be used to import history from previous sessions).
-- Input is recieved with `ConsoleInputEditor` in the form of a `ConsoleResult` which also carries information about cancellation (and perhaps more in future).
+- Input is received with `ConsoleInputEditor` in the form of a `ConsoleResult` which also carries information about cancellation (and perhaps more in future).
 - Cancellation handling is required.
-- Implementation of `ConsoleCancelKeyWatcher` to detect cancellation keystrokes.
+- Implementation of `ConsoleCancelKeyWatcher` to detect cancellation keystrokes.[^ConsoleCancelKeyWatcher]
 
-### Checklist
+[^ConsoleCancelKeyWatcher]: If using a different platform with other input methods, keywatchers are not necessary, nor disposal.
 
-In general, the outer IO layer requires the following:
-
-1. Handler for `ReqWrite` ("Request Write").
-2. Handler for `ReqWriteLine`.
-3. Handler for `ReqInputAsync` which returns a `string`.
-4. Input loop
-
-If using a different platform with other input methods, keywatchers are not necessary, nor disposal.
-
-## Adding Commands
+## Defining Commands
 
 To add commands to the Repl system, define `ReplCommands` using either the `ReplCommand` constructor or `CmdBuilder` (recommended), and put them in the `IReadOnlyList<ReplCommand> Commands` of a class implemented `ICommandSet`. This defines the name and address of the command, and what to do when the command is called.
 
@@ -164,12 +183,12 @@ public partial class MediaCommands : ICommandSet
     
     public MediaCommands(MediaService service)
     {
-        _service = Service;
+        _service = service;
     }
 
     public IReadOnlyList<ReplCommand> Commands =>
     [
-        Cmd("Media)
+        Cmd("Media")
             // ...
             .Build()
     ];
@@ -180,11 +199,11 @@ public partial class MediaCommands : ICommandSet
 - Since command sets are just an implementation of an interface, they are flexible and can implement any properties we want.
 - In these examples, commands are defined inside the `Commands` list but they can be defined elsewhere.
 - In reading list, we defined `MediaCommands` in partial classes, this is not necessary.
-- Commands are defined in a hierarchical structure. There is no technical reason not to use single-headed commands such as if you want, simply define each command in series without implementing hierarchy with `Children()`.
-- Commands do not need to define handlers. The only manadatory property is "Name". "Nodal" commands without execution capability can be used to compartmentalise commands.
+- Commands are defined in a hierarchical structure. There is no technical reason not to use single-headed commands such as if you want, simply define each command in series without implementing hierarchy with `.Children()`.
+- Commands do not need to define handlers. The only mandatory property is "Name". "Nodal" commands without execution capability can be used to compartmentalise commands.
 - No two commands can have the same name if they are both root commands or share a parent, the Repl will not build if there is such a conflict. 
 - Handler methods do not necessarily need to be defined in the same class, they only need to take arguments `(ReplContext, IReadOnlyList<string>, CancellationToken)` and return `Task`.
-- Multiple commands can use the same handlers in different addresses. Presently there is no way to alter command behavious depending on where it was called.
+- Multiple commands can use the same handlers in different addresses. Presently there is no way to alter command behaviours depending on where it was called.
 - Commands can be called with any combination of aliases. Note that every combination of alias is defined upon construction, this can be seen with the base command `Commands.Aliases`. The alias dictionary can increase in size exponentially which could be a concern for larger systems.
 
 
@@ -249,10 +268,10 @@ public IReadOnlyList<ReplCommand> Commands =>
 Basic add function which uses arguments. This is the most developed of the command definitions as of writing, with the most `CmdBuilder` extensions. Most commands will likely not look like this.
 - Command names can consist of any character other than `' '` or `'.'`, so adding aliases such as `Media.+` is perfectly acceptable. I recommend keeping canonical names as letters.
 - This command implements 4 execution methods, we will go into these in more detail below:
-    - `ExecuteAsync` (`.Exec()`): Default execution function, takes `IReadOnlyList<string>` argument and returns `Task`.
-    - `TestAsync` (`.Test()`): Default testing function, takes `IReadOnlyList<string>` argument and returns `Task<bool>`.
-    - `ExecuteJsonAsync` (`.ExecuteJson()`): Json execution function, takes the defined `object` argument and retuns `Task`.
-    - `TestJsonAsync` (`.TestJson()`): Json testing function, takes the defined `object` argument and returns `Task`.
+    - [`ExecuteAsync`](#media.add-execute) (`.Exec()`): Default execution function, takes `IReadOnlyList<string>` argument and returns `Task`.
+    - [`TestAsync`](#media.add-test) (`.Test()`): Default testing function, takes `IReadOnlyList<string>` argument and returns `Task<bool>`.
+    - [`ExecuteJsonAsync`](#media.add-json-execute) (`.ExecuteJson()`): Json execution function, takes the defined `object` argument and returns `Task`.
+    - [`TestJsonAsync`](#media.add-json-test) (`.TestJson()`): Json testing function, takes the defined `object` argument and returns `Task`.
 - For commands with arguments, it is highly recommended to define the `usage` field. This string has no connection to function, so it is up to the developer to keep it updated. Mandatory arguments should be denoted with `<Type Name>` and optional with `[Type Name]`.
 - Examples are added here individually. They can also be added as parameters with `.Examples()`. It is recommended that you do run the commands written here by copying and pasting, as users will rely on this precedent.
      - You will notice that some arguments with multiple words are in quotations, and some optional arguments are given as `'_'` - this character generally means "blank" or "revert to default". Implementation of this is shown later.
@@ -308,14 +327,14 @@ Commands which take arguments should make use of argument extractor functions fr
 
 Here we define each of the required input variables for our `Media` class using argument extractors, add it, and give feedback.
 
-If a suitable extraction method does not exist, you can easily make your own, for example, instead of converting string to MediaType() here, we can do:
+If a suitable extraction method does not exist, you can easily make your own, for example, instead of converting string to MediaType here, we can do:
 
 ```csharp
 
 public static MediaType mediaType(this IReadOnlyList<string> args, int index, string name)
 {
     if (index >= args.Count) throw new ReplUserException($"Not enough arguments, missing MediaType '{name}');
-    if (!MediaType.TryParse(args[index], out MediaType v)) throw new ReplUserException($"Cannot parse MediaType '{Name}': '{args[index]}');
+    if (!MediaType.TryParse(args[index], out MediaType v)) throw new ReplUserException($"Cannot parse MediaType '{name}': '{args[index]}'.");
     else return v;
 }
 
@@ -323,7 +342,7 @@ public static MediaType mediaType(this IReadOnlyList<string> args, int index, st
 
 ### Media.Add.Prompt Execute
 
-Here is the definition for the `Media.Add.Prompmt` handler, `MediaAddPromptAsync`:
+Here is the definition for the `Media.Add.Prompt` handler, `MediaAddPromptAsync`:
 
 ```csharp
 
@@ -357,7 +376,7 @@ private async Task MediaAddPromptAsync(ReplContext ctx, IReadOnlyList<string> ar
         s => (DateTime.TryParse(s, out DateTime v), v), 
         "Could not parse, please try again.", null, "", " ", "_", "null", "notstarted", "not started");
     DateTime? completedOn = await ctx.RequireAsync<DateTime?>(ct, 
-        "Completion date, if known, and have finished (optional, leave blank, 'null', or 'unfinished' otheriwse): ",
+        "Completion date, if known, and have finished (optional, leave blank, 'null', or 'unfinished' otherwise): ",
         s => (DateTime.TryParse(s, out DateTime v), v), 
         "Could not parse, please try again.", null, "", " ", "_", "null", "unfinished", "notfinished");
 
@@ -382,10 +401,10 @@ Notes on the functions used, and other prompt functions:
 
 | Name | Use | Notes | 
 | :--- | :-- | :---- |
-| `ReadLinedAsync()` | Raw input. | Calls method of the same name in `Repl`, which invokes `ReqInputAsync`. All other prompt functions use this. | 
+| `ReadLineAsync()` | Raw input. | Calls method of the same name in `Repl`, which invokes `ReqInputAsync`. All other prompt functions use this. | 
 | `RequestStringNullable()` | Optional arguments. | If input is null or whitespace, returns null. |
 | `RequestStringOrDefault()` | Optional arguments & maintaining defaults. | If input is null or whitespace, or equal to '_', returns fallBack argument. |
-| `RequestStringOrDefaultNullable()` | Optional arguments & maintaining nullable defaults. | If input is null or whitepsace, returns null. If input is '_', returns fallback. |
+| `RequestStringOrDefaultNullable()` | Optional arguments & maintaining nullable defaults. | If input is null or whitespace, returns null. If input is '_', returns fallback. |
 | `RequireString()` | Required arguments. | If input is null or whitespace, prints retryPrompt argument and tries again. |
 | `RequireStringOrDefault()` | Required arguments & maintaining defaults. | If input is null or whitespace, prints retryPrompt and tries again. If input is '_', will return fallBack. |
 | `RequestAsync<T>()`[^RequestAsync] | Optional argument of any type. | Returns fallBack if input string is equal to a defaultString. If no defaultString is defined, will return fallBack if cannot parse. Generally not recommended. See footnote for more details. |
@@ -393,12 +412,12 @@ Notes on the functions used, and other prompt functions:
 
 [^RequestAsync]: RequestAsync() has two overloads:
     
-    - `public static async Task<T> RequestAstnc<T>(this ReplContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T value)> parser, T fallBack = default)`
+    - `public static async Task<T> RequestAsync<T>(this ReplContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T value)> parser, T fallBack = default)`
         - Returns fallBack if cannot parse.
     - `public static async Task<T> RequestAsync<T>(this ReplContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T value)> parser, T fallBack, params string[] defaultStrings)`
         - Throws exception if cannot parse.
 
-    You can use these, but I generally recommend just using RequireAsync() with defaultStrings, as RequestAsync() methods cannot distinguish between intentional omition of data and typos. RequireAsync() methods use RequestAsync().
+    You can use these, but I generally recommend just using RequireAsync() with defaultStrings, as RequestAsync() methods cannot distinguish between intentional omission of data and typos. RequireAsync() methods use RequestAsync().
 
     Examples:
     ``` csharp
@@ -420,7 +439,7 @@ Notes on the functions used, and other prompt functions:
 [^RequireAsync]: RequireAsync() has two overloads:
 
     - `public static async Task<T> RequireAsync<T>(this ReplContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T Value)> parser, string retryPrompt)`
-        - If cannot parse, will repetedly print retryPrompt, prompt and request input again until can parse.
+        - If cannot parse, will repeatedly print retryPrompt, prompt and request input again until can parse.
     - `public static async Task<T> RequireAsync<T>(this ReplContext ctx, CancellationToken ct, string prompt, Func<string, (bool success, T Value)> parser, string retryPrompt, T fallBack, params string[] defaultStrings)`
         - Identical to the other overload, but will return the fallBack value if one if input is equal to one of the defaultStrings.
     
@@ -475,7 +494,7 @@ private Task<bool> MediaAddTest(ReplContext ctx, IReadOnlyList<string> args, Can
     string? notes = args.StringNullableOrDefault(9, "Notes", null);
     double? rating = args.DoubleOrNullable(10, "Rating", null);
 
-    Media Sample = new Media(title, type, status, releaseYear, genre, creator, startedOn, completedOn, progressNote, notes, rating);
+    Media sample = new Media(title, type, status, releaseYear, genre, creator, startedOn, completedOn, progressNote, notes, rating);
 
     // If you set this as "async Task<bool> MediaAddTest()" this can just be "Return true;"
     return Task.FromResult(true);
@@ -485,7 +504,7 @@ private Task<bool> MediaAddTest(ReplContext ctx, IReadOnlyList<string> args, Can
 
 ### Media.Add Json Execute
 
-Commands can be called with arguments formatted in Json. This is mainly used for scripting, but this can be done manually as well by replacing `Repl.ExecuteAsync()` with `Repl.ExecuteJsonAsync()`.
+Commands can be called with arguments formatted in Json. This is mainly used for scripting, but this can be done manually as well by replacing `Repl.ExecuteAsync()` with `Repl.ExecuteJsonAsync()` in the root program.
 
 Json execution methods take an `object` argument which can only be assigned with `CmdBuilder`. In this case, we use `MediaAddPayload`.
 
@@ -495,7 +514,7 @@ To make a command Json executable:
 - Define the Json handler with arguments `(ReplContext, [Your Payload], CancellationToken)` (this can have the same name as normal execute method).
 - Assign it to the command with `.ExecJson<[Your Payload]>([Your Handler])`
 
-Parsing the Json statement and some input validation will be done automatically. I do not recommend assigning a method to 
+Parsing the Json statement and some input validation will be done automatically.
 
 ```csharp
 
@@ -517,3 +536,67 @@ private Task MediaAdd(ReplContext ctx, MediaAddPayload pl, CancellationToken ct)
 private sealed record MediaAddPayload(string Title, string Type, string Status, int? ReleaseYear, string? Genre, string? Creator, DateTime? StartedOn, DateTime? CompletedOn, string? ProgressNotes, string? Notes, double? Rating);
 
 ```
+
+### Media.Add Json Test
+
+In most circumstances you do not need to define a `TestJsonAsync` method - input validation is already done automatically. Adding a Json test handler is more likely to break a script than do anything else. Only define a test handler if you need some conversion logic (e.g. parsing enums), or require information which does not exist in the payload to verify (e.g. referencing other entries).
+
+```csharp
+
+private Task<bool> MediaAddTest(ReplContext ctx, MediaAddPayload pl, CancellationToken ct)
+{
+    MediaType type = pl.Type.ToMediaType();
+    MediaStatus status = pl.Status.ToMediaStatus();
+
+    Media sample = new Media(pl.Title, type, status, pl.ReleaseYear, pl.Genre, pl.Creator, pl.StartedOn, pl.CompletedOn, pl.ProgressNotes, pl.Notes, pl.Rating);
+
+    return Task.FromResult(true);
+}
+
+```
+
+### Media.Add Script
+
+Lets say we already had a different program similar to reading list but wanted to migrate data to this new system. Instead of copying data manually, we can generate a script which can automatically enter the data.
+
+`CCRepl` scripts run using the [Json commands](#media.add-json-execute), and can be called with `Repl.ExecuteScriptAsync()`. Base commands also include `Script` commands to run with the file path.
+
+Here is a sample script segment, lets say we watched Breaking Bad from start to finish as it released:
+
+```
+
+ScriptMetaData
+{
+    "Format": "v2",
+    "Name": "Migration Script",
+    "Author": "Cornelius",
+    "Created": "2026-03-27T11:13:00"
+}
+
+Media.Add
+{
+    "Title": "Breaking Bad",
+    "Type": "Show",
+    "Status": "Completed",
+    "ReleaseYear": 2008,
+    "Creator": "Vince Gilligan",
+    "StartedOn": "2008-01-20T00:00:00",
+    "CompletedOn": "2013-09-29T00:00:00",
+    "ProgressNotes": null,
+    "Notes": null,
+    "Rating": null
+}
+
+```
+
+- Scripts consist of statements.
+- A statement consists of a command (`Media.Add`) and arguments in Json format.
+- Scripts must begin with a ScriptMetaData statement.
+- Scripts have two types of comment:
+    - Block comments, denoted with `#`, start and end with `#`.
+    - Line comments, denoted with `/` (Usually we do `//`).
+- Comments can be placed anywhere except inside of a Json statement.
+- **Arguments must be valid Json or the script will not run.**
+    - All strings must be quoted.
+    - Property names must match payload exactly.
+ 

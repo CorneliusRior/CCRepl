@@ -74,7 +74,7 @@ namespace ReadingList.Commands
             string? notes = args.StringNullableOrDefault(9, "Notes", null);
             double? rating = args.DoubleOrNullable(10, "Rating", null);
 
-            Media Sample = new Media(title, type, status, releaseYear, genre, creator, startedOn, completedOn, progressNote, notes, rating);
+            Media sample = new Media(title, type, status, releaseYear, genre, creator, startedOn, completedOn, progressNote, notes, rating);
 
             // If you set this as "async Task<bool> MediaAddTest()" this can just be "Return true;"
             return Task.FromResult(true);
@@ -87,7 +87,7 @@ namespace ReadingList.Commands
             MediaType type = pl.Type.ToMediaType();
             MediaStatus status = pl.Status.ToMediaStatus();
 
-            Media Sample = new Media(pl.Title, type, status, pl.ReleaseYear, pl.Genre, pl.Creator, pl.StartedOn, pl.CompletedOn, pl.ProgressNotes, pl.Notes, pl.Rating);
+            Media sample = new Media(pl.Title, type, status, pl.ReleaseYear, pl.Genre, pl.Creator, pl.StartedOn, pl.CompletedOn, pl.ProgressNotes, pl.Notes, pl.Rating);
 
             return Task.FromResult(true);
         }
@@ -121,8 +121,8 @@ namespace ReadingList.Commands
                 "Start date, if known, and have started (optional, leave blank, 'null', or 'not started' otherwise): ",
                 s => (DateTime.TryParse(s, out DateTime v), v), 
                 "Could not parse, please try again.", null, "", " ", "_", "null", "notstarted", "not started");
-            DateTime? completedOn = await ctx.RequireAsync<DateTime?>(ct, 
-                "Completion date, if known, and have finished (optional, leave blank, 'null', or 'unfinished' otheriwse): ",
+            DateTime? completedOn = await ctx.RequireAsync<DateTime?>(ct,
+                "Completion date, if known, and have finished (optional, leave blank, 'null', or 'unfinished' otherwise): ",
                 s => (DateTime.TryParse(s, out DateTime v), v), 
                 "Could not parse, please try again.", null, "", " ", "_", "null", "unfinished", "notfinished");
 

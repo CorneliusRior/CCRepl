@@ -32,6 +32,8 @@ while (true)
 {
     Console.Write("> ");
     string? line = Console.ReadLine();
+
+    // Receive input, process before handing it over to repl:
     if (string.IsNullOrWhiteSpace(line)) continue;
     if (line.Equals("exit", StringComparison.OrdinalIgnoreCase)) break;
     if (line.Equals("clear", StringComparison.OrdinalIgnoreCase)) Console.Clear();

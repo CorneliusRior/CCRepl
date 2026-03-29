@@ -38,7 +38,7 @@ while (true)
     ConsoleInputEditor editor = new("> ", history);
     ConsoleResult result = await editor.ReadLineAsync();
     
-    // Recieve input, process before handing it over to repl:
+    // Receive input, process before handing it over to repl:
     if (result.Cancelled) continue;
     string input = result.Text;
     if (string.IsNullOrWhiteSpace(input)) continue;
