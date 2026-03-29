@@ -10,16 +10,16 @@ Commands are added by defining `ReplCommand` objects inside command sets impleme
 
 
 ## Features
-- Hierarchical command structure (`command.subcommand`, `help.list`, &c.).
-- Easy argument parsing and user input exceptions.
+- Hierarchical command structure. ([see documentation](docs/ReplCommand.md)).
+- Automatic command registration, built-in `help` function.
 - Command aliases.
+- Easy argument parsing and user input exceptions ([see documentation](docs/Tools.md)).
 - Asynchronous command execution.
 - Execution cancellation.
-- Optional console function override to enable cancellation by keystroke.
+- Optional console function override to enable cancellation by keystroke ([see documentation](docs/Tools.md)).
 - Options for JSON formatting of command arguments.
 - Test methods for validating command inputs without executing them.
-- Built-in input/output abstraction.
-- Automatic command execution using scripts.
+- Automatic command execution using scripts ([see documentation](docs/Scripts.md)).
 
 ## Usage
 
@@ -31,34 +31,39 @@ To set up a CCRepl command system:
 3. Assign `ReqInputAsync` handler.
 4. Create input loop.
 
-Here is an example for a simple console app:
+Here is an example for a simple console app called ReadingList ([see documentation](docs/Example.md)):
 
 ```csharp
 using CCRepl;
 
-// Define Repl object, assign command sets:
-Repl repl = new(
-	new MyCommands(),
-	// ...
-);
+// Define Repl object w/ command set.
+Repl repl = new(new MediaCommands(service));
 
 // Assign input & output handlers:
-repl.ReqWriteLine += msg => Console.WriteLine(msg);
 repl.ReqWrite += msg => Console.Write(msg);
+repl.ReqWriteLine += msg => Console.WriteLine(msg);
 repl.ReqInputAsync = (prompt, ct) =>
 {
-	Console.WriteLine(prompt);
-	Console.Write("> ");
-	string input = Console.ReadLine() ?? "";
-	return Task.FromResult(input);
+    Console.WriteLine(prompt);
+    Console.Write("> ");
+    string input = Console.ReadLine() ?? "";
+    return Task.FromResult(input);
 };
 
+// Print startup message:
+Console.WriteLine("CCRepl ReadingList.");
+
+// Main input loop:
 while (true)
 {
-	Console.Write("> ");
-	string? line = Console.ReadLine();
-	if (string.IsNullOrWhiteSpace(line)) continue;
-	await repl.ExecuteAsync(line);
+    Console.Write("> ");
+    string? line = Console.ReadLine();
+
+    // Receive input, process before handing it over to repl:
+    if (string.IsNullOrWhiteSpace(line)) continue;
+    if (line.Equals("exit", StringComparison.OrdinalIgnoreCase)) break;
+    if (line.Equals("clear", StringComparison.OrdinalIgnoreCase)) Console.Clear();
+    await repl.ExecuteAsync(line);
 }
 ``` 
 
@@ -137,7 +142,7 @@ public class MyCommands : ICommandSet
 	}
 }
 ```
-See `ReplCommand` documentation for more details.
+[See documentation](docs/ReplCommand.md).
 
 ## Prerequisites
 - .NET 8

@@ -1,10 +1,10 @@
 <Solution>
   <Folder Name="/docs/">
-    <File Path="ReadingList.md" />
-    <File Path="ReplCommand.md" />
-    <File Path="ReplContext.md" />
-    <File Path="Scripts.md" />
-    <File Path="Tools.md" />
+    <File Path="docs/Example.md" />
+    <File Path="docs/ReplCommand.md" />
+    <File Path="docs/ReplContext.md" />
+    <File Path="docs/Scripts.md" />
+    <File Path="docs/Tools.md" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path="README.md" />
