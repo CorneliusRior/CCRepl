@@ -15,7 +15,7 @@
     <Project Path="src/CCRepl/CCRepl.csproj" />
   </Folder>
   <Folder Name="/src/ReadingList/">
-    <Project Path="ReadingList.Cli/ReadingList.Cli.csproj" Id="d9da47a2-10f2-4b55-a09d-354152d0ed29" />
+    <Project Path="src/ReadingList/ReadingList.Cli/ReadingList.Cli.csproj" Id="d9da47a2-10f2-4b55-a09d-354152d0ed29" />
     <Project Path="src/ReadingList/ReadingList.CliBasic/ReadingList.CliBasic.csproj" Id="e8168337-6bf8-4c3f-add2-707f8bcff3bb" />
     <Project Path="src/ReadingList/ReadingList/ReadingList.csproj" Id="932ddab8-378c-4284-a15c-d96f5f799e46" />
   </Folder>

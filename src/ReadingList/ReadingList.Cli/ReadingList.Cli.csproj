@@ -8,8 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\CCRepl\CCRepl.csproj" />
-    <ProjectReference Include="..\src\ReadingList\ReadingList\ReadingList.csproj" />
+    <ProjectReference Include="..\..\CCRepl\CCRepl.csproj" />
+    <ProjectReference Include="..\ReadingList\ReadingList.csproj" />
   </ItemGroup>
 
 </Project>
