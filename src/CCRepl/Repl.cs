@@ -16,6 +16,7 @@ public sealed partial class Repl
     // CommandIndex:
     public Dictionary<string, ReplCommand> CommandIndex = new(StringComparer.OrdinalIgnoreCase);
     public Dictionary<string, ReplCommand> AliasIndex = new(StringComparer.OrdinalIgnoreCase);
+    public List<ReplCommand> RootCommands = new();
        
     // Other variables:
     public int OneLineMaxWidth { get; set; } = 200;

@@ -16,7 +16,8 @@ public sealed class ReplContext
 
     // Command index & other:
     public Dictionary<string, ReplCommand> CommandIndex => _repl.CommandIndex;
-    public Dictionary<string, ReplCommand> AliasIndex => _repl.AliasIndex;  
+    public Dictionary<string, ReplCommand> AliasIndex => _repl.AliasIndex;
+    public List<ReplCommand> RootCommands => _repl.RootCommands;
     public int OneLineMaxWidth => _repl.OneLineMaxWidth;
 
     // IO:

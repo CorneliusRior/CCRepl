@@ -18,6 +18,13 @@ namespace CCRepl.CommandSets
             .Group("Base")
             .Children(
 
+                Cmd("Tree")
+                .Aliases("t", "map")
+                .Exec(HelpTree)
+                .Description("Prints full help tree")
+                .Group("Base")
+                .Build(),
+
                 Cmd("List")
                 .Aliases("l", "ls", "lst")
                 .Exec(HelpDescription)
@@ -156,6 +163,12 @@ namespace CCRepl.CommandSets
             return Task.CompletedTask;
         }
 
+        private Task HelpTree(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            ctx.WriteLine(ctx.BuildRootTree());
+            return Task.CompletedTask;
+        }
+
         private Task HelpDescription(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
         {
             string searchKey = args.StringOr(0, "SearchKey", "");
@@ -197,6 +210,8 @@ namespace CCRepl.CommandSets
             int col1space = Math.Min(commands.Max(c => c.Address!.Length) + 3, 100);
             int col2space = Math.Max(ctx.OneLineMaxWidth - col1space, 0);
 
+            ctx.WriteLine($"{(string.IsNullOrWhiteSpace(searchTerm) ? $"Printing all commands" : $"Printing all commands beginning with '{searchTerm}'")} ({commands.Count} total). Use 'Help <command>' for more information:".ToBox(vPadding: 1, hPadding: 4));
+
             if (!group)
             {
                 ctx.WriteLine();
@@ -205,7 +220,8 @@ namespace CCRepl.CommandSets
             }
 
             // Seperate into groups:
-            List<string?> groups = commands.DistinctBy(c => c.Group).Select(c => c.Group).ToList();
+            List<string?> groups = commands.DistinctBy(c => c.Group).Select(c => c.Group).OrderBy(s => s == "Base" ? 0 : s is null ? 2 : 1).ThenBy(s => s).ToList();
+
             if (groups.Count < 2)
             {
                 ctx.WriteLine();
@@ -218,7 +234,7 @@ namespace CCRepl.CommandSets
                 List<ReplCommand> gc = commands.Where(c => c.Group == g).ToList();
 
                 ctx.WriteLine();
-                ctx.WriteLine($"/─── {(g ?? "(Ungrouped)")}: " + new string('─', ctx.OneLineMaxWidth - 8 - (g ?? "(Ungrouped)").Length) + '/');
+                ctx.WriteLine($"───[{(g ?? "Ungrouped")}:]" + new string('─', ctx.OneLineMaxWidth - 8 - (g ?? "Ungrouped").Length));
                 ctx.WriteLine();
 
                 foreach (ReplCommand c in gc) ctx.WriteLine(c.PrintShort(col1space, col2space, help, oneline));
@@ -242,10 +258,11 @@ namespace CCRepl.CommandSets
 
         private Task CommandListAliases(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
         {
-            int col = Math.Min(ctx.AliasIndex.Max(kv => kv.Key.Length), (ctx.OneLineMaxWidth - 10) / 2);
+            int col = Math.Min(ctx.AliasIndex.Max(kv => kv.Key.Length + kv.Value.Address.Length + 5), (ctx.OneLineMaxWidth - 10) / 2);
             ctx.WriteLine("Printing all commands and aliases. Try 'help <command>` for more information:");
             ctx.WriteLine();
-            foreach (var kv in ctx.AliasIndex.OrderBy(kv => kv.Value.Address)) ctx.WriteLine($"{kv.Key.Truncate(col) + new string('.', col - kv.Key.Length)}...{kv.Value.Address.Truncate(col)}");
+            foreach (var kv in ctx.AliasIndex.OrderBy(kv => kv.Value.Address)) ctx.WriteLine(kv.Key.ToIndexLine(kv.Value.Address, col));
+                //ctx.WriteLine($"{kv.Key.Truncate(col) + new string('.', col - kv.Key.Length)}...{kv.Value.Address.Truncate(col)}");
 
             string report = $"Total of {ctx.AliasIndex.Count} total aliases for {ctx.SearchDictionary().Count} commands.";
             ctx.WriteLine();

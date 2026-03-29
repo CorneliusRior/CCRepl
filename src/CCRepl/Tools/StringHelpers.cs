@@ -10,7 +10,8 @@ namespace CCRepl.Tools;
 public static class StringHelpers
 {
     public static string ToSingleLine(this string input) => input.Replace("\r\n", " ").Replace("\r", " ").Replace("\n", " ");
-    public static string? ToSingleLineNullable(this string? input) => input is null ? null : input.Replace("\r\n", " ").Replace("\r", " ").Replace("\n", " ");
+    public static string? ToSingleLineNullable(this string? input) => input is null ? null : input.Replace("\r\n", " ").Replace("\r", " ").Replace("\n", " ");    
+
     public static string Unindent(this string input) => input.Replace("\t", "");
 
     /// <summary>
@@ -93,6 +94,26 @@ public static class StringHelpers
         string output = prefix + input.ToString() + suffix;
         output = output.Truncate(length, truncateString);
         return output;
+    }
+
+    public static string ToIndexLine(this string leftText, string rightText, int width, char interChar = '.')
+    {
+        if (leftText.Length + rightText.Length > width)
+        {
+            // Right side gets priority:
+            if (rightText.Length > width)
+            {
+                // Proportionate split:
+                leftText = leftText.Truncate((leftText.Length / (leftText.Length + rightText.Length)) * width);
+                rightText = rightText.Truncate((rightText.Length / (leftText.Length + rightText.Length)));
+                return leftText + rightText;
+            }
+            else
+            {
+                return leftText.Truncate(width - rightText.Length) + rightText;
+            }
+        }
+        else return leftText + new string(interChar, width - leftText.Length - rightText.Length) + rightText;
     }
 
     /// <summary>
@@ -248,7 +269,7 @@ public static class StringHelpers
         string[] lineArray = msg.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
 
         if (boxWidth is not null) width = boxWidth.Value;
-        else width = Math.Max(title.Length + 4, lineArray.Max(s => s.Length));
+        else width = Math.Max(title.Length + 4, lineArray.Max(s => s.Length) + hPadding * 2);
         if (maxBoxWidth is not null && width > maxBoxWidth) width = maxBoxWidth.Value;
         if (minBoxWidth is not null && width < minBoxWidth) width = minBoxWidth.Value;
 

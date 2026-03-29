@@ -8,11 +8,10 @@ public sealed partial class Repl
     // Constructor:
     public Repl(params ICommandSet[] commandSets)
     {
-        List<ReplCommand> rootCommands = new();
-        rootCommands.AddRange(new BaseCommands().Commands);
-        foreach (ICommandSet cs in commandSets) rootCommands.AddRange(cs.Commands);
-        AssignCommandAddresses(rootCommands);
-        BuildAliasDictionary(rootCommands);
+        RootCommands.AddRange(new BaseCommands().Commands);
+        foreach (ICommandSet cs in commandSets) RootCommands.AddRange(cs.Commands);
+        AssignCommandAddresses(RootCommands);
+        BuildAliasDictionary(RootCommands);
     }
 
     // Set-up functions:

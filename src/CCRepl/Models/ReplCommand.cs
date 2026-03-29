@@ -1,5 +1,6 @@
 using CCRepl.Tools;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 namespace CCRepl.Models;
 
@@ -68,6 +69,8 @@ public class ReplCommand
         Children = children ?? Array.Empty<ReplCommand>();
     }
 
+    // Print Functions:
+
     public string PrintShort(int col1space, int col2space, HelpAttribute help, bool oneline = true)
     {
         string col1 = $"{Address}:".PadRight(col1space);        
@@ -91,4 +94,17 @@ public class ReplCommand
         (Description is not null ? $"Description: {Description}\n" : "") +
         (Examples.Count > 0 ? $"Examples:\n - \"{string.Join("\"\n - \"", Examples)}\"\n" : "") +
         LongDescription ?? "";
+
+    public string PrintTree(int width, string namePrefix, string listPrefix)
+    {
+        StringBuilder sb = new();
+        List<ReplCommand> ordered = Children.OrderBy(s => s.Name).ToList();
+        sb.AppendLine($"{namePrefix}[{Name}]".ToIndexLine(Address, width));
+        for (int i = 0; i < ordered.Count; i++)
+        {
+            if (i == ordered.Count - 1) sb.Append(ordered[i].PrintTree(width, listPrefix + " └─", listPrefix + "   "));
+            else sb.Append(ordered[i].PrintTree(width, listPrefix + " ├─", listPrefix + " │ "));            
+        }
+        return sb.ToString();
+    }
 }

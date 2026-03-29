@@ -1,12 +1,15 @@
 # CCRepl
 CCRepl is a C# class library for building REPL-style command systems. Commands are registered as a hierarchical tree, and can be executed via external string input, directly within the program, or by running scripts.
 
+![CCRepl Readinglist: a program built using CCRepl](docs/screenshots/ReadingListHelp.png)
+>*(Screenshot of CCRepl ReadingList: a program build using CCRepl, [see documentation](docs/Example.md))*
+
 ## Overview
 CCRepl is designed to quickly and easily create interactive command environments, scripts, and automation tools.
 
-The `Repl` class manages input parsing, prompts, command address assignment, command aliases, execution, and testing.
+The `Repl` class manages input parsing, prompts, command address assignment, command aliases, execution, and testing. Commands are added by defining `ReplCommand` objects inside command sets implementing `ICommandSet`, which are provided to `Repl` during construction. 
 
-Commands are added by defining `ReplCommand` objects inside command sets implementing `ICommandSet`, which are provided to `Repl` during construction. 
+Includes tools to help parse and validate arguments and format output strings, including truncation, indexes, textboxes and tables.
 
 
 ## Features

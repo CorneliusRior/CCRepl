@@ -19,9 +19,6 @@ namespace ReadingList.Commands
 
         public IReadOnlyList<ReplCommand> Commands =>
         [
-            Cmd("duplicate").Build(),
-            //Cmd("duplicate").Build(),
-
             Cmd("Media")
                 .Aliases("m", "md", "Read", "ReadingList", "rd", "rdl")
                 .Description("Commands for interacting with media items.")

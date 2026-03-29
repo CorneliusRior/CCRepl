@@ -233,6 +233,24 @@ namespace CCRepl
             return filtered;
         }
 
+        public static string BuildRootTree(this ReplContext ctx)
+        {
+            string Tree(int w)
+            {
+                StringBuilder sb = new();
+                sb.AppendLine("[Root]");
+                List<ReplCommand> root = ctx.RootCommands.OrderBy(s => s.Name).ToList();
+                for (int i = 0; i < root.Count; i++)
+                {
+                    if (i == root.Count - 1) sb.Append(root[i].PrintTree(w, " └─", "   "));
+                    else sb.Append(root[i].PrintTree(w, " ├─", " │ "));
+                }
+                return sb.ToString();
+            }
+
+            return Tree(Tree(0).Split(new[] { "\r\n", "\n" }, StringSplitOptions.None).Max(s => s.Length) + 5);            
+        }
+
         public static async Task<bool> ConfirmAsync(this ReplContext ctx, CancellationToken ct, string prompt = $"(Y/N):", bool? fallBack = null) => (await ctx.ReadLineAsync(prompt, ct)).ParseConfirmation(fallBack);
 
         public static async Task<bool> ConfirmRequireAsync(this ReplContext ctx, CancellationToken ct, string prompt = $"(Y/N)", string retryPrompt = "Could not parse, try again.")
