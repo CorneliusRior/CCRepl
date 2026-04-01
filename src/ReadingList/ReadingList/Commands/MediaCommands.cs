@@ -19,6 +19,8 @@ namespace ReadingList.Commands
 
         public IReadOnlyList<ReplCommand> Commands =>
         [
+            Cmd("Wait").Exec(WaitAnimations).Build(),
+
             Cmd("Media")
             .Aliases("m", "md", "Read", "ReadingList", "rd", "rdl")
             .Description("Commands for interacting with media items.")
@@ -205,5 +207,33 @@ namespace ReadingList.Commands
             .Description("Displays some information about reading list.")
             .Build()
         ];
+
+        private async Task WaitAnimations(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            int type = args.IntOr(0, "Type", 0);
+            string pre = args.StringOr(1, "Prefix", "Loading");
+            string suf = args.StringOr(2, "Suffix", "");
+            string fin = args.StringOr(3, "Finish", "");
+            int waitTime = args.IntOr(4, "Wait Time", 100);
+            double seconds = args.DoubleOr(5, "Seconds", 5);
+
+            ctx.WriteLine("Animating:\n");
+
+            WaitAnimation animation = type switch
+            {
+                1 => WaitAnimation.Spinner,
+                2 => WaitAnimation.Elipses,
+                3 => WaitAnimation.Bounce,
+                4 => WaitAnimation.Road,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            await ctx.WithWaiterAsync(
+                async t =>
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(seconds));
+                },
+                pre, suf, fin, waitTime, ct, animation);
+
+        }
     }
 }

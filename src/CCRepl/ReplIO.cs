@@ -7,8 +7,8 @@ namespace CCRepl;
 
 public sealed partial class Repl
 {
-    public event Action<string>? ReqWriteLine;
     public event Action<string>? ReqWrite;
+    public event Action<string>? ReqWriteLine;
     //public Func<string, Task<string>>? ReqInputAsync { get; set; }
     public Func<string, CancellationToken, Task<string>>? ReqInputAsync { get; set; }
     internal async Task<string> ReadLineAsync(string prompt, CancellationToken ct)

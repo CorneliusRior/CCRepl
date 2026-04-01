@@ -247,8 +247,7 @@ namespace CCRepl
                 }
                 return sb.ToString();
             }
-
-            return Tree(Tree(0).Split(new[] { "\r\n", "\n" }, StringSplitOptions.None).Max(s => s.Length) + 5);            
+            return Tree(70);          
         }
 
         public static async Task<bool> ConfirmAsync(this ReplContext ctx, CancellationToken ct, string prompt = $"(Y/N):", bool? fallBack = null) => (await ctx.ReadLineAsync(prompt, ct)).ParseConfirmation(fallBack);
