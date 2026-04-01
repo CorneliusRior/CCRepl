@@ -11,7 +11,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 
-namespace ReadingList.WPF
+namespace CCRepl.WPF
 {
     public abstract class ReplWindowBase : Window
     {
@@ -21,7 +21,9 @@ namespace ReadingList.WPF
         protected abstract TextBox Input { get; }
         protected abstract TextBox Output { get; }
 
-        public ReplWindowBase(WPFReplSurface surface)
+        protected ReplWindowBase() { }
+
+        protected void Initialize(WPFReplSurface surface)
         {
             _surface = surface;
         }
@@ -46,9 +48,9 @@ namespace ReadingList.WPF
             }
         }
 
-        private async void btEnter_Click(object sender, RoutedEventArgs e) => await SubmitAsync();
+        protected async void btEnter_Click(object sender, RoutedEventArgs e) => await SubmitAsync();
 
-        private async void tbInput_KeyDown(object sender, KeyEventArgs e)
+        protected async void tbInput_KeyDown(object sender, KeyEventArgs e)
         {
             switch (WPFHandleKeyDown(sender, e, ref _tabDepth))
             {
@@ -62,12 +64,12 @@ namespace ReadingList.WPF
             }
         }
 
-        private void tbInput_PreviewKeyDown(object sender, KeyEventArgs e)
+        protected void tbInput_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Up) _surface.HistoryUp();
             if (e.Key == Key.Down) _surface.HistoryDown();
         }
 
-        private void tbInput_PreviewTextInput(object sender, TextCompositionEventArgs e) => WPFHandlePreviewTextInput(sender, e);
+        protected void tbInput_PreviewTextInput(object sender, TextCompositionEventArgs e) => WPFHandlePreviewTextInput(sender, e);
     }
 }

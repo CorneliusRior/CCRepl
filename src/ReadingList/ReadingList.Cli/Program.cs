@@ -13,7 +13,7 @@ MediaService service = new($"Data Source={dataPath}");
 try
 {
     // Define Repl object w/ command set.
-    Repl repl = new(new MediaCommands(service));
+    Repl repl = new(new ReadingListCommands(service));
 
     // History:
     List<string> history = [];

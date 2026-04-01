@@ -9,10 +9,10 @@ using ReadingList.Models;
 
 namespace ReadingList.Commands
 {    
-    public partial class MediaCommands : ICommandSet
+    public partial class ReadingListCommands : ICommandSet
     {
         private MediaService _service;
-        public MediaCommands(MediaService service)
+        public ReadingListCommands(MediaService service)
         {
             _service = service;
         }

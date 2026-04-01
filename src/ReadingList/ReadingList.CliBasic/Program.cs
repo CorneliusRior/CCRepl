@@ -12,7 +12,7 @@ MediaService service = new($"Data Source={dataPath}");
 try
 {
     // Define Repl object w/ command set.
-    Repl repl = new(new MediaCommands(service));
+    Repl repl = new(new ReadingListCommands(service));
 
     // Assign input & output handlers:
     repl.ReqWrite += msg => Console.Write(msg);

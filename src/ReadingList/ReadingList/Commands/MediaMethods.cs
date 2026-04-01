@@ -7,7 +7,7 @@ using System.Text;
 
 namespace ReadingList.Commands
 {
-    public partial class MediaCommands
+    public partial class ReadingListCommands
     {
         private Task MediaAdd(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
         {

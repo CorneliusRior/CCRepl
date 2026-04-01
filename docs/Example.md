@@ -47,14 +47,14 @@ Cli and CliBasic are two slightly different ways of doing this:
 
 ### ReadingList.CliBasic
 
-After defining a `MediaService` Class required for `MediaCommands` to function:
+After defining a `MediaService` Class required for `ReadingListCommands` to function:
 
 ```csharp
 
 try
 {
     // Define Repl object w/ command set.
-    Repl repl = new(new MediaCommands(service));
+    Repl repl = new(new ReadingListCommands(service));
 
     // Assign input & output handlers:
     repl.ReqWrite += msg => Console.Write(msg);
@@ -103,7 +103,7 @@ Implementation with `ConsoleInputEditor` is more flexible, allows for keystroke 
 try
 {
     // Define Repl object w/ command set.
-    Repl repl = new(new MediaCommands(service));
+    Repl repl = new(new ReadingListCommands(service));
 
     // History:
     List<string> history = [];
@@ -176,7 +176,32 @@ Implementation differs from the basic version in a couple of places:
 
 ### ReadingList.WPF
 
-Implementation for a WPF application
+Implementation for a WPF application, assuming TextBoxes `tbInput` and `tbOutput`:
+
+```csharp
+
+/// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
+    public partial class MainWindow : ReplWindowBase
+    {
+        protected override TextBox Input => tbInput;
+        protected override TextBox Output => tbOutput;
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            DataContext = this;
+
+            // (Defining ReadingListCommands)
+            
+            Initialize(new WPFReplSurface(tbInput, tbOutput, Dispatcher, new ReadingListCommands(service)));
+        }
+    }
+
+```
+
+This makes use of the `ReplWindowBase` class. You can get more flexibility from not using it:
 
 ```csharp
 
@@ -191,10 +216,10 @@ public partial class MainWindow : Window
             InitializeComponent();
             DataContext = this;
 
-            // (Defining MediaCommands)
+            // (Defining ReadingListCommands)
             
             // Input, Output & History handled by _surface:
-            _surface = new WPFReplSurface(tbInput, tbOutput, Dispatcher, new Commands.MediaCommands(service));
+            _surface = new WPFReplSurface(tbInput, tbOutput, Dispatcher, new Commands.ReadingListCommands(service));
         }
 
         private async Task SubmitAsync()
@@ -258,11 +283,11 @@ To add commands to the Repl system, define `ReplCommands` using either the `Repl
 
 ```csharp
 
-public partial class MediaCommands : ICommandSet
+public partial class ReadingListCommands : ICommandSet
 {
     private MediaService _service;
     
-    public MediaCommands(MediaService service)
+    public ReadingListCommands(MediaService service)
     {
         _service = service;
     }
@@ -279,7 +304,7 @@ public partial class MediaCommands : ICommandSet
 
 - Since command sets are just an implementation of an interface, they are flexible and can implement any properties we want.
 - In these examples, commands are defined inside the `Commands` list but they can be defined elsewhere.
-- In reading list, we defined `MediaCommands` in partial classes, this is not necessary.
+- In reading list, we defined `ReadingListCommands` in partial classes, this is not necessary.
 - Commands are defined in a hierarchical structure. There is no technical reason not to use single-headed commands such as if you want, simply define each command in series without implementing hierarchy with `.Children()`.
 - Commands do not need to define handlers. The only mandatory property is "Name". "Nodal" commands without execution capability can be used to compartmentalise commands.
 - No two commands can have the same name if they are both root commands or share a parent, the Repl will not build if there is such a conflict. 
