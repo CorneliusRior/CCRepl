@@ -1,4 +1,5 @@
 
+using CCRepl.Models;
 using System.Text;
 using System.Windows.Controls;
 using System.Windows.Threading;
@@ -24,11 +25,25 @@ namespace CCRepl.WPF
             _otp = output;
             _dispatcher = dispatcher;
 
-            repl.ReqWrite += Write;
-            repl.ReqWriteLine += WriteLine;
-            repl.ReqWriteStatus += WriteStatus;
-            repl.ReqClearStatus += ClearStatus;
-            repl.ReqInputAsync += ReqInputAsync;
+            _repl.ReqWrite += Write;
+            _repl.ReqWriteLine += WriteLine;
+            _repl.ReqWriteStatus += WriteStatus;
+            _repl.ReqClearStatus += ClearStatus;
+            _repl.ReqInputAsync += ReqInputAsync;
+        }
+
+        public WPFReplSurface(TextBox input, TextBox output, Dispatcher dispatcher, params ICommandSet[] commandSets)
+        {
+            _repl = new Repl(commandSets);
+            _inp = input;
+            _otp = output;
+            _dispatcher = dispatcher;
+
+            _repl.ReqWrite += Write;
+            _repl.ReqWriteLine += WriteLine;
+            _repl.ReqWriteStatus += WriteStatus;
+            _repl.ReqClearStatus += ClearStatus;
+            _repl.ReqInputAsync += ReqInputAsync;
         }
         
         public void Write(string msg)
