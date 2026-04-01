@@ -1,4 +1,5 @@
 ﻿using CCRepl;
+using CCRepl.WPF;
 using ReadingList.Commands;
 using ReadingList.Services;
 using System.ComponentModel;
@@ -24,6 +25,7 @@ namespace ReadingList.WPF
     public partial class MainWindow : Window
     {
         private Repl _repl;
+        private readonly WPFReplSurface _surface;
         private CancellationTokenSource? _cts;
         private TaskCompletionSource<string>? _pendingInput;
         private bool _inputRequested;
@@ -40,6 +42,10 @@ namespace ReadingList.WPF
             MediaService service = new($"Data Source={dataPath}");
             
             _repl = new Repl(new Commands.MediaCommands(service));
+            _surface = new WPFReplSurface(tbInput, tbOutput, Dispatcher);
+            _surface.Bind(_repl);
+
+            /*
             _repl.ReqWrite += msg => Dispatcher.Invoke(() => tbOutput.AppendText(msg));
             _repl.ReqWriteLine += msg => Dispatcher.Invoke(() => tbOutput.AppendText(Environment.NewLine + msg));
             _repl.ReqInputAsync = async (prompt, ct) =>
@@ -68,22 +74,16 @@ namespace ReadingList.WPF
                         });
                     }
                 }
-            };
+            };*/
         }
 
-        private async Task Submit()
+        private async Task SubmitAsync()
         {
             string input = tbInput.Text;
-            tbInput.Text = "";
+            tbInput.Clear();
 
-            if (_inputRequested)
-            {
-                _pendingInput?.TrySetResult(input);
-                return;
-            }
-            
+            if (_surface.TrySubmitInput(input)) return;            
             if (string.IsNullOrWhiteSpace(input)) return;
-            tbOutput.AppendText(Environment.NewLine + "> " + input);
 
             if (input.Equals("clear", StringComparison.OrdinalIgnoreCase))
             {
@@ -94,21 +94,18 @@ namespace ReadingList.WPF
             _cts?.Dispose();
             _cts = new CancellationTokenSource();
             
-            try { await _repl.ExecuteAsync(input, _cts.Token); }
+            try { await _surface.ExecuteAsync(_repl, input, _cts.Token); }
             catch (OperationCanceledException) { tbOutput.AppendText(Environment.NewLine + "[Cancelled]"); }
             finally
             {
                 _cts.Dispose();
                 _cts = null;
-                tbOutput.ScrollToEnd();
             }
-
-            
         }
 
         private async void btEnter_Click(object sender, RoutedEventArgs e)
         {
-            await Submit();
+            await SubmitAsync();
         }
 
         private void InputInsert(string str)
@@ -169,7 +166,7 @@ namespace ReadingList.WPF
                 else
                 {
                     tbOutput.ScrollToEnd();
-                    await Submit();
+                    await SubmitAsync();
                     e.Handled = true;
                 }
             }

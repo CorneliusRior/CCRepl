@@ -9,12 +9,12 @@ public sealed partial class Repl
 {
     public event Action<string>? ReqWrite;
     public event Action<string>? ReqWriteLine;
-    //public Func<string, Task<string>>? ReqInputAsync { get; set; }
+    public event Action<string>? ReqWriteStatus;
+    public event Action<string>? ReqClearStatus;
     public Func<string, CancellationToken, Task<string>>? ReqInputAsync { get; set; }
     internal async Task<string> ReadLineAsync(string prompt, CancellationToken ct)
     {
         if (ReqInputAsync is not null) return await ReqInputAsync(prompt, ct);
-        //if (ReqInputAsync is not null) return await ReqInputAsync(prompt);
         throw new InvalidOperationException("Input requested callback is not set");        
     }
     
@@ -38,10 +38,14 @@ public sealed partial class Repl
     /// <param name="msg">Message to print.</param>
     internal void WriteStatus(string msg)
     {
-        int padLength = Math.Max(0, _lastStatusLength - msg.Length);
-        string output = "\r" + msg + new string(' ', padLength);
-        _lastStatusLength = msg.Length;
-        Write(output);
+        if (ReqWriteStatus is not null) ReqWriteStatus.Invoke(msg);
+        else
+        {
+            int padLength = Math.Max(0, _lastStatusLength - msg.Length);
+            string output = "\r" + msg + new string(' ', padLength);
+            _lastStatusLength = msg.Length;
+            Write(output);
+        }        
     }
 
     internal void WriteStatusSample(string msg, int length = 150)
@@ -59,10 +63,14 @@ public sealed partial class Repl
     /// <param name="msg">Optional message to print in place of status.</param>
     internal void ClearStatus(string msg = "")
     {
-        if (_lastStatusLength <= 0) return;
-        Write("\r" + new string(' ', _lastStatusLength) + "\r");
-        _lastStatusLength = 0;
-        if (!string.IsNullOrWhiteSpace(msg)) WriteLine(msg + "\n");
+        if (ReqClearStatus is not null) ReqClearStatus.Invoke(msg);
+        else
+        {
+            if (_lastStatusLength <= 0) return;
+            Write("\r" + new string(' ', _lastStatusLength) + "\r");
+            _lastStatusLength = 0;
+            if (!string.IsNullOrWhiteSpace(msg)) WriteLine(msg + "\n");
+        }        
     }
 
     /// <summary>
