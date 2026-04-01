@@ -86,5 +86,71 @@ namespace CCRepl.WPF
                 e.Handled = true;
             }
         }
+
+        public static KeyAction WPFHandleKeyDown(object sender, KeyEventArgs e, ref int tabDepth)
+        {
+            if (sender is not TextBox) return KeyAction.None;
+            TextBox tb = (TextBox)sender;
+
+            if (e.Key == Key.Escape) return KeyAction.Cancel;
+
+            if (e.Key == Key.Enter)
+            {
+                if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) || Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+                {
+                    tb.Insert(Environment.NewLine + new string('\t', tabDepth));
+                    e.Handled = true;
+                    return KeyAction.None;
+                }
+                else
+                {
+                    e.Handled = true;
+                    return KeyAction.Submit;
+                }
+            }
+            if (e.Key == Key.Tab)
+            {
+                if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+                {
+                    if (tb.RemoveTab())
+                    {
+                        tabDepth--;
+                        tabDepth = Math.Max(tabDepth, 0);
+                    }
+                }
+                else
+                {
+                    tb.Insert("\t");
+                    tabDepth++;                    
+                }
+
+                e.Handled = true;
+                return KeyAction.None;
+            }
+
+            if (e.Key == Key.Up)
+            {
+                e.Handled = true;
+                return KeyAction.HistoryUp;
+            }
+
+            if (e.Key == Key.Down)
+            {
+                e.Handled = true;
+                return KeyAction.HistoryDown;
+            }
+
+            return KeyAction.None;
+        }
     }
+
+    public enum KeyAction
+    {
+        None,
+        Cancel,
+        Submit,
+        HistoryUp,
+        HistoryDown
+    }
+
 }
