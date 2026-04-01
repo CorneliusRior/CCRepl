@@ -84,47 +84,7 @@ namespace ReadingList.WPF
             await SubmitAsync();
         }
 
-        private void AddToHistory(string str)
-        {
-            if (_history.Count == 0 || !string.Equals(_history[^1], str, StringComparison.Ordinal)) _history.Add(str);
-        }
-
-        private void LoadHistory(int index)
-        {
-            tbInput.Clear();
-            tbInput.AppendText(_history[index]);
-            tbInput.CaretIndex = tbInput.Text.Length;
-        }
-
-        private void HistoryUp()
-        {
-            if (_history.Count == 0) return;
-            if (!_browsingHistory)
-            {
-                _currentDraft = tbInput.Text;
-                _browsingHistory = true;
-                _historyIndex = _history.Count;
-            }
-            if (_historyIndex > 0) _historyIndex--;
-            LoadHistory(_historyIndex);
-        }
-
-        private void HistoryDown()
-        {
-            if (!_browsingHistory) return;
-            if (_historyIndex < _history.Count -1)
-            {
-                _historyIndex++;
-                LoadHistory(_historyIndex);
-                return;
-            }
-
-            _historyIndex = _history.Count;
-            tbInput.Clear();
-            tbInput.AppendText(_currentDraft);
-            _browsingHistory = false;
-        }
-
+       
         private async void tbInput_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
@@ -167,35 +127,54 @@ namespace ReadingList.WPF
 
         private void tbInput_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            if (e.Text is "\"" or "}" or "]" or ")")
-            {
-                if (tbInput.CheckNext(e.Text))
-                {
-                    tbInput.CaretIndex += e.Text.Length;
-                    e.Handled = true;
-                    return;
-                }
-            }
-            if (e.Text is "\"" or "{" or "[" or "(")
-            {
-                string close = e.Text switch
-                {
-                    "\"" => "\"",
-                    "{" => "}",
-                    "[" => "]",
-                    "(" => ")",
-                    _ => ""
-                };
-                tbInput.InsertPair(e.Text, close);
-                //InputInsertPair(e.Text, close);
-                e.Handled = true;
-            }
+            WPFHandlePreviewTextInput(sender, e);
         }
 
         private void tbInput_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Up) HistoryUp();
             if (e.Key == Key.Down) HistoryDown();
+        }
+
+        private void AddToHistory(string str)
+        {
+            if (_history.Count == 0 || !string.Equals(_history[^1], str, StringComparison.Ordinal)) _history.Add(str);
+        }
+
+        private void LoadHistory(int index)
+        {
+            tbInput.Clear();
+            tbInput.AppendText(_history[index]);
+            tbInput.CaretIndex = tbInput.Text.Length;
+        }
+
+        private void HistoryUp()
+        {
+            if (_history.Count == 0) return;
+            if (!_browsingHistory)
+            {
+                _currentDraft = tbInput.Text;
+                _browsingHistory = true;
+                _historyIndex = _history.Count;
+            }
+            if (_historyIndex > 0) _historyIndex--;
+            LoadHistory(_historyIndex);
+        }
+
+        private void HistoryDown()
+        {
+            if (!_browsingHistory) return;
+            if (_historyIndex < _history.Count - 1)
+            {
+                _historyIndex++;
+                LoadHistory(_historyIndex);
+                return;
+            }
+
+            _historyIndex = _history.Count;
+            tbInput.Clear();
+            tbInput.AppendText(_currentDraft);
+            _browsingHistory = false;
         }
     }
 }

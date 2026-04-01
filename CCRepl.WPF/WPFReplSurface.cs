@@ -18,7 +18,12 @@ namespace CCRepl.WPF
 
         private TaskCompletionSource<string>? _pendingInput;
 
-        public WPFReplSurface(Repl repl, TextBox input, TextBox output, Dispatcher dispatcher)
+        private List<string> _history;
+        bool _browsingHistory = false;
+        private int _historyIndex;
+        private string _currentDraft = "";
+
+        public WPFReplSurface(Repl repl, TextBox input, TextBox output, Dispatcher dispatcher, List<string>? history = null)
         {
             _repl = repl;
             _inp = input;
@@ -30,6 +35,8 @@ namespace CCRepl.WPF
             _repl.ReqWriteStatus += WriteStatus;
             _repl.ReqClearStatus += ClearStatus;
             _repl.ReqInputAsync += ReqInputAsync;
+
+            _history = history ?? [];
         }
 
         public WPFReplSurface(TextBox input, TextBox output, Dispatcher dispatcher, params ICommandSet[] commandSets)
@@ -44,8 +51,26 @@ namespace CCRepl.WPF
             _repl.ReqWriteStatus += WriteStatus;
             _repl.ReqClearStatus += ClearStatus;
             _repl.ReqInputAsync += ReqInputAsync;
+
+            _history = [];
         }
-        
+
+        public WPFReplSurface(TextBox input, TextBox output, Dispatcher dispatcher, List<string> history, params ICommandSet[] commandSets)
+        {
+            _repl = new Repl(commandSets);
+            _inp = input;
+            _otp = output;
+            _dispatcher = dispatcher;
+
+            _repl.ReqWrite += Write;
+            _repl.ReqWriteLine += WriteLine;
+            _repl.ReqWriteStatus += WriteStatus;
+            _repl.ReqClearStatus += ClearStatus;
+            _repl.ReqInputAsync += ReqInputAsync;
+
+            _history = history;
+        }
+
         public void Write(string msg)
         {
             _dispatcher.Invoke(() =>
@@ -98,6 +123,7 @@ namespace CCRepl.WPF
             return await tcs.Task;
         }
 
+        // Input helpers:
         public bool TrySubmitInput(string text)
         {
             if (_pendingInput is null) return false;
@@ -124,6 +150,48 @@ namespace CCRepl.WPF
             _otp.Text = sb.ToString() + _status;
             _otp.CaretIndex = _otp.Text.Length;
             _otp.ScrollToEnd();
+        }
+
+        // History functions:
+        private void AddToHistory(string str)
+        {
+            if (_history.Count == 0 || !string.Equals(_history[^1], str, StringComparison.Ordinal)) _history.Add(str);
+        }
+
+        private void LoadHistory(int index)
+        {
+            _inp.Clear();
+            _inp.AppendText(_history[index]);
+            _inp.CaretIndex = _inp.Text.Length;
+        }
+
+        public void HistoryUp()
+        {
+            if (_history.Count == 0) return;
+            if (!_browsingHistory)
+            {
+                _currentDraft = _inp.Text;
+                _browsingHistory = true;
+                _historyIndex = _history.Count;
+            }
+            if (_historyIndex > 0) _historyIndex--;
+            LoadHistory(_historyIndex);
+        }
+
+        public void HistoryDown()
+        {
+            if (!_browsingHistory) return;
+            if (_historyIndex < _history.Count - 1)
+            {
+                _historyIndex++;
+                LoadHistory(_historyIndex);
+                return;
+            }
+
+            _historyIndex = _history.Count;
+            _inp.Clear();
+            _inp.AppendText(_currentDraft);
+            _browsingHistory = false;
         }
     }
 

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Shell;
 
 namespace CCRepl.WPF
@@ -55,6 +56,35 @@ namespace CCRepl.WPF
                 return true;
             }
             return false;
+        }
+
+        public static void WPFHandlePreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            if (sender is not TextBox) return;
+            TextBox tb = (TextBox)sender;
+
+            if (e.Text is "\"" or "}" or "]" or ")")
+            {
+                if (tb.CheckNext(e.Text))
+                {
+                    tb.CaretIndex += e.Text.Length;
+                    e.Handled = true;
+                    return;
+                }
+            }
+            if (e.Text is "\"" or "{" or "[" or "(")
+            {
+                string close = e.Text switch
+                {
+                    "\"" => "\"",
+                    "{" => "}",
+                    "[" => "]",
+                    "(" => ")",
+                    _ => ""
+                };
+                tb.InsertPair(e.Text, close);
+                e.Handled = true;
+            }
         }
     }
 }
