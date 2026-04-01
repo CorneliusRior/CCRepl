@@ -55,7 +55,7 @@ namespace ReadingList.WPF
         private async Task SubmitAsync()
         {
             string input = tbInput.Text;
-            AddToHistory(input);
+            _surface.AddToHistory(input);
             tbInput.Clear();
 
             if (_surface.TrySubmitInput(input)) return;            
@@ -132,8 +132,8 @@ namespace ReadingList.WPF
 
         private void tbInput_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Up) HistoryUp();
-            if (e.Key == Key.Down) HistoryDown();
+            if (e.Key == Key.Up) _surface.HistoryUp();
+            if (e.Key == Key.Down) _surface.HistoryDown();
         }
 
         private void AddToHistory(string str)
@@ -148,6 +148,7 @@ namespace ReadingList.WPF
             tbInput.CaretIndex = tbInput.Text.Length;
         }
 
+        /*
         private void HistoryUp()
         {
             if (_history.Count == 0) return;
@@ -175,6 +176,6 @@ namespace ReadingList.WPF
             tbInput.Clear();
             tbInput.AppendText(_currentDraft);
             _browsingHistory = false;
-        }
+        }*/
     }
 }

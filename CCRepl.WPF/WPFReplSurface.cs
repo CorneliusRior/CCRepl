@@ -153,7 +153,7 @@ namespace CCRepl.WPF
         }
 
         // History functions:
-        private void AddToHistory(string str)
+        public void AddToHistory(string str)
         {
             if (_history.Count == 0 || !string.Equals(_history[^1], str, StringComparison.Ordinal)) _history.Add(str);
         }
