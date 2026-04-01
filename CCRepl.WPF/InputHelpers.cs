@@ -128,18 +128,6 @@ namespace CCRepl.WPF
                 return KeyAction.None;
             }
 
-            if (e.Key == Key.Up)
-            {
-                e.Handled = true;
-                return KeyAction.HistoryUp;
-            }
-
-            if (e.Key == Key.Down)
-            {
-                e.Handled = true;
-                return KeyAction.HistoryDown;
-            }
-
             return KeyAction.None;
         }
     }
@@ -148,9 +136,7 @@ namespace CCRepl.WPF
     {
         None,
         Cancel,
-        Submit,
-        HistoryUp,
-        HistoryDown
+        Submit
     }
 
 }
