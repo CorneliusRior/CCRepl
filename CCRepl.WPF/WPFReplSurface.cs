@@ -7,6 +7,7 @@ namespace CCRepl.WPF
 {
     public sealed class WPFReplSurface
     {
+        private readonly Repl _repl;
         private readonly TextBox _otp; // output
         private readonly TextBox _inp; // input
         private readonly Dispatcher _dispatcher;
@@ -16,22 +17,19 @@ namespace CCRepl.WPF
 
         private TaskCompletionSource<string>? _pendingInput;
 
-        public WPFReplSurface(TextBox input, TextBox output, Dispatcher dispatcher)
+        public WPFReplSurface(Repl repl, TextBox input, TextBox output, Dispatcher dispatcher)
         {
+            _repl = repl;
             _inp = input;
             _otp = output;
             _dispatcher = dispatcher;
-        }
 
-        public void Bind(Repl repl)
-        {
             repl.ReqWrite += Write;
             repl.ReqWriteLine += WriteLine;
             repl.ReqWriteStatus += WriteStatus;
             repl.ReqClearStatus += ClearStatus;
             repl.ReqInputAsync += ReqInputAsync;
         }
-
         
         public void Write(string msg)
         {
@@ -94,10 +92,16 @@ namespace CCRepl.WPF
             return true;
         }
 
-        public async Task ExecuteAsync(Repl repl, string input, CancellationToken ct)
+        public async Task ExecuteAsync(string input, CancellationToken ct)
         {
             WriteLine($"> {input}");
-            await repl.ExecuteAsync(input, ct);
+            await _repl.ExecuteAsync(input, ct);
+        }
+
+        public void Cancel()
+        {
+            _pendingInput?.TrySetCanceled();
+            if (!string.IsNullOrWhiteSpace(_status)) ClearStatus("Cancalled");
         }
 
         private void RefreshOutput()

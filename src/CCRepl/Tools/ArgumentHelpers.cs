@@ -18,10 +18,14 @@ public static class ArgumentHelpers
         StringBuilder sb = new();
         bool inQuotes = false;
         bool lastCharSlash = false;
+        int braceDepth = 0;
 
         foreach (char c in input.Trim())
         {
-            if (c == '"' && !lastCharSlash)
+            if (c == '{') braceDepth++;
+            if (c == '}') braceDepth--;
+
+            if (c == '"' && !lastCharSlash && braceDepth < 1)
             {
                 inQuotes = !inQuotes;
                 continue;
@@ -45,7 +49,7 @@ public static class ArgumentHelpers
             sb.Append(c);
             lastCharSlash = false;
         }
-        if (inQuotes) throw new FormatException("Unmatched quotes");
+        if (inQuotes) throw new FormatException($"Unmatched quotes{(braceDepth < 1 ? "" : $" (Bracedepth = {braceDepth}, unmatched '{{'?)")}");
         if (sb.Length > 0) tokens.Add(sb.ToString());
         return tokens;
     }

@@ -31,7 +31,7 @@
 
         <TextBox x:Name="tbOutput" TextWrapping="Wrap" IsReadOnly="True" AcceptsReturn="True"
                  Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"/>
-        <TextBox x:Name="tbInput" PreviewTextInput="tbInput_PreviewTextInput" KeyDown="tbInput_KeyDown" VerticalContentAlignment="Center" Grid.Row="1" Grid.Column="0"/>
+        <TextBox x:Name="tbInput" PreviewTextInput="tbInput_PreviewTextInput" KeyDown="tbInput_KeyDown" PreviewKeyDown="tbInput_PreviewKeyDown" VerticalContentAlignment="Center" Grid.Row="1" Grid.Column="0"/>
         <Button x:Name="btEnter" Click="btEnter_Click" Content="Enter" Padding="12,4" Margin="1" Background="Black" Foreground="White" Grid.Row="1" Grid.Column="1"/>
 
     </Grid>

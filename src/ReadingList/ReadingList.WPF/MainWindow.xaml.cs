@@ -24,11 +24,15 @@ namespace ReadingList.WPF
     /// </summary>
     public partial class MainWindow : Window
     {
-        private Repl _repl;
+        private readonly Repl _repl;
         private readonly WPFReplSurface _surface;
         private CancellationTokenSource? _cts;
-        private TaskCompletionSource<string>? _pendingInput;
-        private bool _inputRequested;
+
+        private List<string> _history;
+        bool _browsingHistory = false;
+        private int _historyIndex;
+        private string _currentDraft = "";
+
         private int _tabDepth = 0;
 
         public MainWindow()
@@ -42,44 +46,15 @@ namespace ReadingList.WPF
             MediaService service = new($"Data Source={dataPath}");
             
             _repl = new Repl(new Commands.MediaCommands(service));
-            _surface = new WPFReplSurface(tbInput, tbOutput, Dispatcher);
-            _surface.Bind(_repl);
+            _surface = new WPFReplSurface(_repl, tbInput, tbOutput, Dispatcher);
 
-            /*
-            _repl.ReqWrite += msg => Dispatcher.Invoke(() => tbOutput.AppendText(msg));
-            _repl.ReqWriteLine += msg => Dispatcher.Invoke(() => tbOutput.AppendText(Environment.NewLine + msg));
-            _repl.ReqInputAsync = async (prompt, ct) =>
-            {
-                TaskCompletionSource<string> tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
-                await Dispatcher.InvokeAsync(() =>
-                {
-                    tbOutput.AppendText(Environment.NewLine + prompt);
-                    tbOutput.ScrollToEnd();
-                    tbInput.Focus();
-
-                    _inputRequested = true;
-                    _pendingInput = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-                    tcs = _pendingInput;
-                });
-
-                using (ct.Register(() => tcs.TrySetCanceled(ct)))
-                {
-                    try { return await tcs.Task; }
-                    finally
-                    {
-                        await Dispatcher.InvokeAsync(() =>
-                        {
-                            _inputRequested = false;
-                            _pendingInput = null;
-                        });
-                    }
-                }
-            };*/
+            _history = new();
         }
 
         private async Task SubmitAsync()
         {
             string input = tbInput.Text;
+            AddToHistory(input);
             tbInput.Clear();
 
             if (_surface.TrySubmitInput(input)) return;            
@@ -94,7 +69,7 @@ namespace ReadingList.WPF
             _cts?.Dispose();
             _cts = new CancellationTokenSource();
             
-            try { await _surface.ExecuteAsync(_repl, input, _cts.Token); }
+            try { await _surface.ExecuteAsync(input, _cts.Token); }
             catch (OperationCanceledException) { tbOutput.AppendText(Environment.NewLine + "[Cancelled]"); }
             finally
             {
@@ -115,7 +90,7 @@ namespace ReadingList.WPF
             tbInput.CaretIndex = ci + str.Length;
         }
 
-        private void InputBackSpace()
+        private void RemoveTab()
         {
             int ci = tbInput.CaretIndex;
             tbInput.Text = tbInput.Text.Remove(ci - 1, 1);
@@ -132,13 +107,55 @@ namespace ReadingList.WPF
             {
                 tbInput.Text = tbInput.Text.Remove(start, length)
                     .Insert(start, open + selected + close);
-                tbInput.SelectionStart = start + open.Length + selected.Length + close.Length;
+                tbInput.SelectionStart = start + open.Length;
+                tbInput.SelectionLength = length;                
             }
             else
             {
                 tbInput.Text = tbInput.Text.Insert(start, open + close);
-                tbInput.SelectionStart = start + open.Length;
+                tbInput.SelectionStart = start + open.Length;                
             }
+        }
+
+        private void AddToHistory(string str)
+        {
+            if (_history.Count == 0 || !string.Equals(_history[^1], str, StringComparison.Ordinal)) _history.Add(str);
+        }
+
+        private void LoadHistory(int index)
+        {
+            tbInput.Clear();
+            tbInput.AppendText(_history[index]);
+            tbInput.CaretIndex = tbInput.Text.Length;
+        }
+
+        private void HistoryUp()
+        {
+            if (_history.Count == 0) return;
+            if (!_browsingHistory)
+            {
+                _currentDraft = tbInput.Text;
+                _browsingHistory = true;
+                _historyIndex = _history.Count;
+            }
+            if (_historyIndex > 0) _historyIndex--;
+            LoadHistory(_historyIndex);
+        }
+
+        private void HistoryDown()
+        {
+            if (!_browsingHistory) return;
+            if (_historyIndex < _history.Count -1)
+            {
+                _historyIndex++;
+                LoadHistory(_historyIndex);
+                return;
+            }
+
+            _historyIndex = _history.Count;
+            tbInput.Clear();
+            tbInput.AppendText(_currentDraft);
+            _browsingHistory = false;
         }
 
         private bool InputCheckNext(string str)
@@ -154,7 +171,7 @@ namespace ReadingList.WPF
             if (e.Key == Key.Escape)
             {
                 _cts?.Cancel();
-                if (_inputRequested) _pendingInput?.TrySetCanceled();
+                _surface.Cancel();
             }
 
             if (e.Key == Key.Enter)
@@ -165,17 +182,17 @@ namespace ReadingList.WPF
                 }
                 else
                 {
-                    tbOutput.ScrollToEnd();
-                    await SubmitAsync();
                     e.Handled = true;
+                    await SubmitAsync();
                 }
             }
             if (e.Key == Key.Tab)
             {
                 if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
                 {
-                    InputBackSpace();
+                    RemoveTab();
                     _tabDepth--;
+                    _tabDepth = Math.Max(_tabDepth, 0);
                     e.Handled = true;
                 }
                 else
@@ -211,6 +228,12 @@ namespace ReadingList.WPF
                 InputInsertPair(e.Text, close);
                 e.Handled = true;
             }
+        }
+
+        private void tbInput_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Up) HistoryUp();
+            if (e.Key == Key.Down) HistoryDown();
         }
     }
 }
