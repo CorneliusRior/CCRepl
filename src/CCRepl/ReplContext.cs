@@ -21,6 +21,9 @@ public sealed class ReplContext
     public int OneLineMaxWidth => _repl.OneLineMaxWidth;
 
     // IO:
+    public void CloseApplication(string msg = "") => _repl.CloseApplication(msg);
+    public void ClearScreen(string msg = "") => _repl.ClearScreen(msg);
+
     /// <summary>
     /// Prints 'prompt', returns whatever user types as a string. Used for raw input.
     /// </summary>

@@ -1,5 +1,6 @@
 
 using CCRepl.Models;
+using CCRepl.Tools;
 using System.Text;
 using System.Windows.Controls;
 using System.Windows.Threading;
@@ -30,6 +31,8 @@ namespace CCRepl.WPF
             _otp = output;
             _dispatcher = dispatcher;
 
+            _repl.ReqClose += CloseAsync;
+            _repl.ReqClear += Clear;
             _repl.ReqWrite += Write;
             _repl.ReqWriteLine += WriteLine;
             _repl.ReqWriteStatus += WriteStatus;
@@ -46,6 +49,8 @@ namespace CCRepl.WPF
             _otp = output;
             _dispatcher = dispatcher;
 
+            _repl.ReqClose += CloseAsync;
+            _repl.ReqClear += Clear;
             _repl.ReqWrite += Write;
             _repl.ReqWriteLine += WriteLine;
             _repl.ReqWriteStatus += WriteStatus;
@@ -62,6 +67,8 @@ namespace CCRepl.WPF
             _otp = output;
             _dispatcher = dispatcher;
 
+            _repl.ReqClose += CloseAsync;
+            _repl.ReqClear += Clear;
             _repl.ReqWrite += Write;
             _repl.ReqWriteLine += WriteLine;
             _repl.ReqWriteStatus += WriteStatus;
@@ -71,6 +78,26 @@ namespace CCRepl.WPF
             _history = history;
         }
 
+
+        public async void CloseAsync(string msg)
+        {
+            await _dispatcher.Invoke(async () =>
+            {
+                Write((string.IsNullOrWhiteSpace(msg) ? "(No Message)" : msg).ToBox(vPadding: 1, hPadding: 3, title: "Application Closing"));
+                await Task.Delay(TimeSpan.FromSeconds(5));
+                System.Windows.Application.Current.Shutdown();
+            });
+        }
+
+        public void Clear(string msg)
+        {
+            _dispatcher.Invoke(() =>
+            {
+                sb.Clear();
+                if (!string.IsNullOrWhiteSpace(msg)) sb.Append(msg);
+                RefreshOutput();
+            });
+        }
         public void Write(string msg)
         {
             _dispatcher.Invoke(() =>

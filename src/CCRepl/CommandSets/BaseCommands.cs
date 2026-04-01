@@ -153,6 +153,20 @@ namespace CCRepl.CommandSets
                 .Build()
 
                 )
+            .Build(),
+
+            Cmd("Clear")
+            .Aliases("ClearScreen", "clr")
+            .Exec(Clear)
+            .Description("Clears the screen (as long as ReqClear is set).")
+            .Group("Base")
+            .Build(),
+
+            Cmd("Exit")
+            .Aliases("Close", "ExitProgram", "CloseProgram")
+            .Exec(Exit)
+            .Description("Closes the program (as long as ReqClear is set).")
+            .Group("Base")
             .Build()
         ];
 
@@ -320,6 +334,18 @@ namespace CCRepl.CommandSets
             ctx.WriteLine($"Parsing file '{Path.GetFileName(path)}'...");
             Script script = await ctx.WithWaiterAsync(_ => Task.Run(() => ScriptParser.FromPath(path)), "Parsing Script ", "", "Parsed.", 100, ct, WaitAnimation.Spinner);
             await ctx.TestScriptAsync(script, ct);
+        }
+
+        private Task Clear(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            ctx.ClearScreen();
+            return Task.CompletedTask;
+        }
+
+        private Task Exit(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        {
+            ctx.CloseApplication("Request close from command Exit (Base).");
+            return Task.CompletedTask;
         }
     }
 }

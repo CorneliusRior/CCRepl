@@ -174,6 +174,84 @@ Implementation differs from the basic version in a couple of places:
 
 [^ConsoleCancelKeyWatcher]: If using a different platform with other input methods, keywatchers are not necessary, nor disposal.
 
+### ReadingList.WPF
+
+Implementation for a WPF application
+
+```csharp
+
+public partial class MainWindow : Window
+    {
+        private readonly WPFReplSurface _surface;
+        private CancellationTokenSource? _cts;
+        private int _tabDepth = 0;
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            DataContext = this;
+
+            // (Defining MediaCommands)
+            
+            // Input, Output & History handled by _surface:
+            _surface = new WPFReplSurface(tbInput, tbOutput, Dispatcher, new Commands.MediaCommands(service));
+        }
+
+        private async Task SubmitAsync()
+        {
+            // Receive input:
+            string input = tbInput.Text;
+            tbInput.Clear();
+
+            // If Repl is awaiting prompt, send, otherwise, continue to a new command.
+            if (_surface.TrySubmitInput(input)) return;            
+            if (string.IsNullOrWhiteSpace(input)) return;
+            _surface.AddToHistory(input);
+
+            // Declare new CancellationTokenSource:
+            _cts?.Dispose();
+            _cts = new CancellationTokenSource();
+            
+            // Execite, watching for cancellation, then dispose of CancellationTokenSource:
+            try { await _surface.ExecuteAsync(input, _cts.Token); }
+            catch (OperationCanceledException) { tbOutput.AppendText(Environment.NewLine + "[Cancelled]"); }
+            finally
+            {
+                _cts.Dispose();
+                _cts = null;
+            }
+        }
+
+        // Input handlers using CCRepl.WPF.InputHelpers:
+        private async void btEnter_Click(object sender, RoutedEventArgs e) => await SubmitAsync();
+               
+        private async void tbInput_KeyDown(object sender, KeyEventArgs e)
+        {
+            switch (WPFHandleKeyDown(sender, e, ref _tabDepth))
+            {
+                case KeyAction.Cancel:
+                    _cts?.Cancel();
+                    _surface.Cancel();
+                    break;
+                case KeyAction.Submit:
+                    await SubmitAsync();
+                    break;
+            }
+        }
+
+        private void tbInput_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Up) _surface.HistoryUp();
+            if (e.Key == Key.Down) _surface.HistoryDown();
+        }
+
+        private void tbInput_PreviewTextInput(object sender, TextCompositionEventArgs e) => WPFHandlePreviewTextInput(sender, e);
+    }
+
+```
+
+In this case, much more of the implementation is handled internally. `WPFReplSurface` also has a constructor which takes `Repl`, which can be used in tandem for greater flexibility, it can also have an argument `List<string> history`.
+
 ## Defining Commands
 
 To add commands to the Repl system, define `ReplCommands` using either the `ReplCommand` constructor or `CmdBuilder` (recommended), and put them in the `IReadOnlyList<ReplCommand> Commands` of a class implemented `ICommandSet`. This defines the name and address of the command, and what to do when the command is called.

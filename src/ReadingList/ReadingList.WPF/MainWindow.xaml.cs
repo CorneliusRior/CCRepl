@@ -17,7 +17,6 @@ namespace ReadingList.WPF
     {
         private readonly WPFReplSurface _surface;
         private CancellationTokenSource? _cts;
-
         private int _tabDepth = 0;
 
         public MainWindow()
@@ -30,27 +29,26 @@ namespace ReadingList.WPF
             string dataPath = Path.Combine(dataDir, "ReadingList.db");
             MediaService service = new($"Data Source={dataPath}");
             
+            // Input, Output & History handled by _surface:
             _surface = new WPFReplSurface(tbInput, tbOutput, Dispatcher, new Commands.MediaCommands(service));
         }
 
         private async Task SubmitAsync()
         {
+            // Receive input:
             string input = tbInput.Text;
             tbInput.Clear();
 
+            // If Repl is awaiting prompt, send, otherwise, continue to a new command.
             if (_surface.TrySubmitInput(input)) return;            
             if (string.IsNullOrWhiteSpace(input)) return;
             _surface.AddToHistory(input);
 
-            if (input.Equals("clear", StringComparison.OrdinalIgnoreCase))
-            {
-                tbOutput.Clear();
-                return;
-            }
-
+            // Declare new CancellationTokenSource:
             _cts?.Dispose();
             _cts = new CancellationTokenSource();
             
+            // Execite, watching for cancellation, then dispose of CancellationTokenSource:
             try { await _surface.ExecuteAsync(input, _cts.Token); }
             catch (OperationCanceledException) { tbOutput.AppendText(Environment.NewLine + "[Cancelled]"); }
             finally
@@ -60,6 +58,7 @@ namespace ReadingList.WPF
             }
         }
 
+        // Input handlers using CCRepl.WPF.InputHelpers:
         private async void btEnter_Click(object sender, RoutedEventArgs e) => await SubmitAsync();
                
         private async void tbInput_KeyDown(object sender, KeyEventArgs e)

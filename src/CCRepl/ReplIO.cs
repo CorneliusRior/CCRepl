@@ -7,6 +7,8 @@ namespace CCRepl;
 
 public sealed partial class Repl
 {
+    public event Action<string>? ReqClose;
+    public event Action<string>? ReqClear;
     public event Action<string>? ReqWrite;
     public event Action<string>? ReqWriteLine;
     public event Action<string>? ReqWriteStatus;
@@ -18,6 +20,24 @@ public sealed partial class Repl
         throw new InvalidOperationException("Input requested callback is not set");        
     }
     
+    /// <summary>
+    /// Invokes ReqClose, event must be assigned.
+    /// </summary>
+    internal void CloseApplication(string msg = "")
+    {
+        if (ReqClose is null) WriteLine("Attempted to close application, but request close callback ('ReqClose') is not set.");
+        else ReqClose.Invoke(msg);
+    }
+
+    /// <summary>
+    /// Invokes ReqClear, event must be assigned. 
+    /// </summary>
+    internal void ClearScreen(string msg = "")
+    {
+        if (ReqClear is null) WriteLine("Attempted to clear application, but request clear callback ('ReqClear') is not set");
+        else ReqClear.Invoke(msg);
+    }
+
     /// <summary>
     /// Writes a new line in output. Invokes OutputRequested.
     /// </summary>
