@@ -137,7 +137,7 @@ namespace CCRepl.WPF
 
         public async Task<string> ReqInputAsync(string msg, CancellationToken ct)
         {
-            WriteLine(msg);
+            Write(msg);
             TaskCompletionSource<string> tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             await _dispatcher.BeginInvoke(() =>
