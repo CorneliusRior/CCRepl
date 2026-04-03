@@ -11,7 +11,7 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/CCRepl.Cli2/CCRepl.Cli2.csproj" Id="9380d8ea-3ddc-4be0-8487-a96c2e2394e4" />
-    <Project Path="CCRepl.WPF/CCRepl.WPF.csproj" Id="73cb4940-9a6f-4351-85b1-3d0e2894b950" />
+    <Project Path="src/CCRepl.WPF/CCRepl.WPF.csproj" Id="73cb4940-9a6f-4351-85b1-3d0e2894b950" />
     <Project Path="src/CCRepl.Cli/CCRepl.Cli.csproj" />
     <Project Path="src/CCRepl/CCRepl.csproj" />
   </Folder>

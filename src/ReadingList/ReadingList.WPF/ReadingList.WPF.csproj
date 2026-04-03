@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\CCRepl.WPF\CCRepl.WPF.csproj" />
+    <ProjectReference Include="..\..\CCRepl.WPF\CCRepl.WPF.csproj" />
     <ProjectReference Include="..\..\CCRepl\CCRepl.csproj" />
     <ProjectReference Include="..\ReadingList\ReadingList.csproj" />
   </ItemGroup>
