@@ -81,7 +81,7 @@ namespace CCRepl.WPF
 
         public async void CloseAsync(string msg)
         {
-            await _dispatcher.Invoke(async () =>
+            await _dispatcher.BeginInvoke(async () =>
             {
                 Write((string.IsNullOrWhiteSpace(msg) ? "(No Message)" : msg).ToBox(vPadding: 1, hPadding: 3, title: "Application Closing"));
                 await Task.Delay(TimeSpan.FromSeconds(5));
@@ -91,7 +91,7 @@ namespace CCRepl.WPF
 
         public void Clear(string msg)
         {
-            _dispatcher.Invoke(() =>
+            _dispatcher.BeginInvoke(() =>
             {
                 sb.Clear();
                 if (!string.IsNullOrWhiteSpace(msg)) sb.Append(msg);
@@ -100,7 +100,7 @@ namespace CCRepl.WPF
         }
         public void Write(string msg)
         {
-            _dispatcher.Invoke(() =>
+            _dispatcher.BeginInvoke(() =>
             {
                 sb.Append(msg);
                 RefreshOutput();
@@ -109,7 +109,7 @@ namespace CCRepl.WPF
 
         public void WriteLine(string msg)
         {
-            _dispatcher.Invoke(() =>
+            _dispatcher.BeginInvoke(() =>
             {
                 sb.AppendLine(msg);
                 RefreshOutput();
@@ -118,7 +118,7 @@ namespace CCRepl.WPF
 
         public void WriteStatus(string msg)
         {
-            _dispatcher.Invoke(() =>
+            _dispatcher.BeginInvoke(() =>
             {
                 _status = msg;
                 RefreshOutput();
@@ -127,7 +127,7 @@ namespace CCRepl.WPF
 
         public void ClearStatus(string msg)
         {
-            _dispatcher.Invoke(() =>
+            _dispatcher.BeginInvoke(() =>
             {
                 if (!string.IsNullOrWhiteSpace(msg)) sb.AppendLine(msg);
                 _status = "";
@@ -140,7 +140,7 @@ namespace CCRepl.WPF
             WriteLine(msg);
             TaskCompletionSource<string> tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            _dispatcher.Invoke(() =>
+            await _dispatcher.BeginInvoke(() =>
             {
                 _pendingInput = tcs;
                 _inp.Focus();
