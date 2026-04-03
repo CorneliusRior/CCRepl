@@ -84,7 +84,8 @@ namespace CCRepl.WPF
             await _dispatcher.BeginInvoke(async () =>
             {
                 Write((string.IsNullOrWhiteSpace(msg) ? "(No Message)" : msg).ToBox(vPadding: 1, hPadding: 3, title: "Application Closing"));
-                await Task.Delay(TimeSpan.FromSeconds(5));
+                await _repl.WithWaiterAsync(
+                    token => Task.Delay(TimeSpan.FromSeconds(5)), "Closing in ", " seconds.", "", 1000, default, "5", "4", "3", "2", "1");
                 System.Windows.Application.Current.Shutdown();
             });
         }
@@ -163,6 +164,7 @@ namespace CCRepl.WPF
         public async Task ExecuteAsync(string input, CancellationToken ct)
         {
             WriteLine($"> {input}");
+            _historyIndex = _history.Count;
             await _repl.ExecuteAsync(input, ct);
         }
 

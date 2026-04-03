@@ -158,7 +158,7 @@ namespace CCRepl
         /// <returns></returns>
         public static async Task<string?> RequestStringNullable(this ReplContext ctx, CancellationToken ct, string prompt)
         {
-            string? input = await ctx.ReadLineAsync(prompt, ct);
+            string input = await ctx.ReadLineAsync(prompt, ct);
             if (string.IsNullOrWhiteSpace(input)) return null;
             else return input;
         }

@@ -129,6 +129,18 @@ public static class StringHelpers
         else return check ? checkedString : unCheckedString;
     }
 
+    public static string Pct(this int value, int denominator, string format = "0.#")
+    {
+        double v = (double)value, n = (double)denominator;
+        return v.Pct(n, format);
+    }
+
+    public static string Pct(this double value, double denominator, string format = "0.#")
+    {
+        if (denominator == 0) return "-%";
+        return ((value / denominator) * 100).ToString(format) + '%';
+    }
+
     /// <summary>
     /// This is for very specific kind of case. For listing things out.
     /// 
