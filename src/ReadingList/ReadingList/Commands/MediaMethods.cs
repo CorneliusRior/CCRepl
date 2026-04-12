@@ -13,13 +13,8 @@ namespace ReadingList.Commands
         {
             // Mandatory arguments use "args.[Type]()"
             string title = args.String(0, "Title");
-
-            // Types without dedicated extractors need to be manually converted after:
-            string typeStr = args.String(1, "Type");
-            if (!typeStr.TryToMediaType(out MediaType type)) throw new ReplUserException($"Could not parse type '{typeStr}'.");
-
-            string statStr = args.String(2, "Status");
-            if (!statStr.TryToMediaStatus(out MediaStatus status)) throw new ReplUserException($"Could not parse status '{statStr}'.");
+            MediaType type = args.ExtractArg(1, "Type", s => (s.TryToMediaType(out MediaType v), v));
+            MediaStatus status = args.ExtractArg(2, "Status", s => (s.TryToMediaStatus(out MediaStatus v), v));
 
             // Optional/Nullable arguments can use nullable extractors:
             int? releaseYear = args.IntOrNullable(3, "Release Year", null);
