@@ -61,7 +61,7 @@ public static class ArgumentHelpers
         if (index >= args.Count) throw new ReplUserException($"Not enough arguments, missing {nameof(T)} '{name}'.");
         var result = parser(args[index]);
         if (result.success) return result.Value;
-        throw new ReplUserException($"Cannot parse {nameof(T)} '{name}': '{args[0]}'.");
+        throw new ReplUserException($"Cannot parse {nameof(T)} '{name}': '{args[index]}'.");
     }
 
     public static T ExtractArg<T>(this IReadOnlyList<string> args, int index, string name, Func<string, (bool success, T Value)> parser, T fallback, params string[] defaultStrings)
@@ -70,7 +70,7 @@ public static class ArgumentHelpers
         if (defaultStrings.Any(s => string.Equals(s, args[index], StringComparison.OrdinalIgnoreCase))) return fallback;
         var result = parser(args[index]);
         if (result.success) return result.Value;
-        throw new ReplUserException($"Cannot parse {nameof(T)} '{name}': '{args[0]}'.");
+        throw new ReplUserException($"Cannot parse {nameof(T)} '{name}': '{args[index]}'.");
     }
 
     /// <summary>
