@@ -21,6 +21,7 @@ namespace CCRepl.Tools
 
         private Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? _executeAsync;
         private Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? _testAsync;
+        private List<IArgSpec> _argSpecs = [];
 
         private Func<ReplContext, object, CancellationToken, Task>? _executeJsonAsync;
         private Func<ReplContext, object, CancellationToken, Task<bool>>? _testJsonAsync;
@@ -83,6 +84,12 @@ namespace CCRepl.Tools
         public CommandBuilder Test(Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>> testAsync)
         {
             _testAsync = testAsync;
+            return this;
+        }
+
+        public CommandBuilder Args(params ICmdArg[] args)
+        {
+            foreach (ICmdArg arg in args) _argSpecs.Add(arg.ToArgSpec());
             return this;
         }
 
