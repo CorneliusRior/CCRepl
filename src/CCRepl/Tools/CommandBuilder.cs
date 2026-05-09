@@ -1,4 +1,5 @@
 ﻿using CCRepl.Models;
+using CCRepl.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -159,10 +160,51 @@ namespace CCRepl.Tools
         public CommandBuilder SubCommands(params ReplCommand[] subCommands) => Children(subCommands);
         public CommandBuilder AddSubcommand(ReplCommand subCommand) => AddChild(subCommand);
         public CommandBuilder SubcommandAdd(ReplCommand subCommand) => AddChild(subCommand);
+
+        // Argument functions:
+        public static CmdArg<int> IntArg(string name, ArgMode mode = ArgMode.Required, int fallback = default, string prompt = "", string retryPrompt = "", params string[] cancelStrings) =>
+            new CmdArg<int>(name, Parsers.Parse, mode, fallback, prompt, retryPrompt, cancelStrings);
+
+        public static CmdArg<double> DblArg(string name, ArgMode mode = ArgMode.Required, double fallback = default, string prompt = "", string retryPrompt = "", params string[] cancelStrings) =>
+            new CmdArg<double>(name, Parsers.Parse, mode, fallback, prompt, retryPrompt, cancelStrings);
+
+        public static CmdArg<string> StrArg(string name, ArgMode mode = ArgMode.Required, string fallback = "", string prompt = "", string retryPrompt = "", params string[] cancelStrings) =>
+            new CmdArg<string>(name, Parsers.Parse, mode, fallback, prompt, retryPrompt, cancelStrings);
+
+        public static CmdArg<DateTime> DtmArg(string name, ArgMode mode = ArgMode.Required, DateTime fallback = default, string prompt = "", string retryPrompt = "", params string[] cancelStrings) =>
+            new CmdArg<DateTime>(name, Parsers.Parse, mode, fallback, prompt, retryPrompt, cancelStrings);
+
     }
 
     public static class CmdBuilder
     {
         public static CommandBuilder Cmd(string name) => new(name);
     }
+
+    // Structural class for defining command arguments:
+    public interface ICmdArg
+    {
+        IArgSpec ToArgSpec();
+    }
+
+    public sealed class CmdArg<T> : ICmdArg
+    {
+        public string Name { get; }
+        public ArgParser<T> Parser { get; }
+        public ArgMode Mode { get; }
+        public T? Fallback { get; }
+        public PromptInfo PmtInfo { get; }
+
+        public CmdArg(string name, ArgParser<T> parser, ArgMode mode = ArgMode.Required, T? fallback = default, string prompt = "", string retryPrompt = "", params string[] cancelStrings)
+        {
+            Name = name;
+            Parser = parser;
+            Mode = mode;
+            Fallback = fallback;
+
+            PmtInfo = new PromptInfo(prompt, retryPrompt, cancelStrings.Length == 0 ? new[] { "\\" } : cancelStrings);
+        }
+
+        public IArgSpec ToArgSpec() => new ArgSpec<T>(Name, Mode, Parser, Fallback, PmtInfo);
+    }    
 }

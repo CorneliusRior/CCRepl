@@ -27,5 +27,17 @@ namespace CCRepl.Models
         public string Prompt { get; set; } = "";
         public string RetryPrompt { get; set; } = "";
         public IReadOnlyList<string> CancelStrings { get; init; } = new[] { "\\" };
+
+        public PromptInfo()
+        {
+
+        }
+
+        public PromptInfo(string prompt, string retryPrompt, IReadOnlyList<string> cancelStrings)
+        {
+            Prompt = prompt;
+            RetryPrompt = retryPrompt;
+            CancelStrings = cancelStrings;
+        }
     }
 }
