@@ -46,6 +46,7 @@ namespace CCRepl.Tools
                 testAsync:          _testAsync,
                 executeJsonAsync:   _executeJsonAsync,
                 testJsonAsync:      _testJsonAsync,
+                argSpecs:           _argSpecs,
                 aliases:            _aliases,
                 usage:              _usage,
                 description:        _description,
@@ -166,7 +167,12 @@ namespace CCRepl.Tools
         public CommandBuilder ChildAdd(ReplCommand child) => AddChild(child);
         public CommandBuilder SubCommands(params ReplCommand[] subCommands) => Children(subCommands);
         public CommandBuilder AddSubcommand(ReplCommand subCommand) => AddChild(subCommand);
-        public CommandBuilder SubcommandAdd(ReplCommand subCommand) => AddChild(subCommand);
+        public CommandBuilder SubcommandAdd(ReplCommand subCommand) => AddChild(subCommand);        
+    }
+
+    public static class CmdBuilder
+    {
+        public static CommandBuilder Cmd(string name) => new(name);
 
         // Argument functions:
         public static CmdArg<int> IntArg(string name, ArgMode mode = ArgMode.Required, int fallback = default, string prompt = "", string retryPrompt = "", params string[] cancelStrings) =>
@@ -180,12 +186,6 @@ namespace CCRepl.Tools
 
         public static CmdArg<DateTime> DtmArg(string name, ArgMode mode = ArgMode.Required, DateTime fallback = default, string prompt = "", string retryPrompt = "", params string[] cancelStrings) =>
             new CmdArg<DateTime>(name, Parsers.Parse, mode, fallback, prompt, retryPrompt, cancelStrings);
-
-    }
-
-    public static class CmdBuilder
-    {
-        public static CommandBuilder Cmd(string name) => new(name);
     }
 
     // Structural class for defining command arguments:

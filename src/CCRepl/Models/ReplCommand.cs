@@ -29,7 +29,7 @@ public class ReplCommand
     public Type? JsonPayloadType { get; init; }
 
     // Help attributes:
-    public string? Usage { get; init; }
+    public string? Usage { get; private set; }
     public string? Description { get; init; }
     public IReadOnlyList<string> Examples { get; init; }
     public string? LongDescription { get; init; }
@@ -43,6 +43,7 @@ public class ReplCommand
         string name,
         Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? executeAsync = null,
         Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? testAsync = null,
+        IReadOnlyList<IArgSpec>? argSpecs = null,
         Func<ReplContext, object, CancellationToken, Task>? executeJsonAsync = null,
         Func<ReplContext, object, CancellationToken, Task<bool>>? testJsonAsync = null,
         IReadOnlyList<string>? aliases = null,
@@ -60,6 +61,7 @@ public class ReplCommand
         TestAsync = testAsync;
         ExecuteJsonAsync = executeJsonAsync;
         TestJsonAsync = testJsonAsync;
+        ArgSpecs = argSpecs ?? Array.Empty<IArgSpec>();
         Aliases = aliases ?? Array.Empty<string>();
         Usage = usage;
         Description = description;
@@ -68,6 +70,19 @@ public class ReplCommand
         Remarks = remarks;
         Group = group;
         Children = children ?? Array.Empty<ReplCommand>();
+    }
+
+    // Usage Generation:
+    public void GenerateUsage()
+    {
+        if (string.IsNullOrWhiteSpace(Usage))
+        {
+            StringBuilder sb = new();
+            sb.Append(Address);
+            sb.Append(' ');
+            foreach (IArgSpec spec in ArgSpecs) sb.Append(spec.Print()).Append(' ');
+            Usage = sb.ToString();
+        }
     }
 
     // Print Functions:

@@ -12,8 +12,9 @@ namespace CCRepl.CommandSets
             Cmd("Help")
             .Exec(Help)
             .Aliases("h", "?")
-            .Usage("Help [string SearchKey]")
-            .Description("Lists all commands and descriptions, or shows full help for all commands starting with SearchKey if specified.")
+            .Args(StrArg("Search Key", ArgMode.Optional))
+            //.Usage("Help [string SearchKey]")
+            .Description("Lists all commands and descriptions, or shows full help for all commands starting with Search Key if specified.")
             .Examples("Help", "Help Diary.Add")
             .Group("Base")
             .Children(

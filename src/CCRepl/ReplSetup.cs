@@ -29,6 +29,7 @@ public sealed partial class Repl
     {
         commandHead.Add(command.Name);        
         command.Address = string.Join('.', commandHead);
+        command.GenerateUsage();
         // put a try argument here: crashes when you have multiple commands with same name.
         if (!CommandIndex.TryAdd(command.Address, command)) throw new ReplException($"Duplicate command address: '{command.Address}'. Repl will not build.");
         foreach (ReplCommand child in command.Children.OrderBy(c => c.Name).ToList()) AssignChildAddress(child, commandHead);
