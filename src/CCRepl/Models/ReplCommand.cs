@@ -18,6 +18,7 @@ public class ReplCommand
     public Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? TestAsync { get; init; }
     public bool CanTest => TestAsync is not null;
 
+    public IReadOnlyList<IArgSpec> ArgSpecs { get; init; } = [];
 
     public Func<ReplContext, object, CancellationToken, Task>? ExecuteJsonAsync { get; init; }
     public bool CanExecuteJson => ExecuteJsonAsync is not null;

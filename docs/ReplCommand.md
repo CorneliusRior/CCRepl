@@ -63,8 +63,12 @@ public class MyCommands : ICommandSet
 {
 	public IReadOnlyList<ReplCommand> Commands =>
 	[
-		Cmd("MyCommand").Children(
-			Cmd("MySubCommand").Build()
+		Cmd("MyCommand")
+		.Children(
+
+			Cmd("MySubCommand")
+			.Build()
+
 		)
 		.Build()
 	];
