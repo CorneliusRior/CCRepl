@@ -375,6 +375,11 @@ public static class StringHelpers
     */
 
 
+    public static string PresentList(this IEnumerable<string> list, string title = "", string start = "[ '", string inter = "', '", string end = "' ]") => title + ' ' + start + string.Join(inter, list) + end;
+
+    public static string PresentList_ML(this IEnumerable<string> list, string title = "", string start = "{\n\t", string inter = ",\n\t", string end = "\n};") => title + ' ' + start + string.Join(inter, list) + end;
+
+    public static string PrintVec(this IEnumerable<string> list, [CallerArgumentExpression("list")] string name = "") => list.PresentList_ML(name);    
 }
 
 /// <summary>

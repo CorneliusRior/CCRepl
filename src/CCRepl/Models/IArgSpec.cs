@@ -44,13 +44,13 @@ namespace CCRepl.Models
 
         public IArgValue Parse(string text)
         {
-            if (_parser(text, out T value)) return new ArgValue<T>(value);
+            if (_parser(text, out T value)) return new ArgValue<T>(Name, value);
             throw new ReplUserException($"Cannot parse argument {Print()}: '{text}'");
         }
 
         public IArgValue Fallback()
         {
-            return new ArgValue<T>(_fallback);
+            return new ArgValue<T>(Name, _fallback);
         }
 
         public string Print()
@@ -66,7 +66,7 @@ namespace CCRepl.Models
                 PmtInfo.Prompt = $"Enter value for {Name} ({requiredText}, {TypeString}): ";
             }
 
-            if (string.IsNullOrWhiteSpace(PmtInfo.Prompt))
+            if (string.IsNullOrWhiteSpace(PmtInfo.RetryPrompt))
             {
                 if (PmtInfo.CancelStrings.Count == 0)
                 {

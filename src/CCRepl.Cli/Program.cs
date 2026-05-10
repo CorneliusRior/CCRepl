@@ -2,7 +2,7 @@
 using CCRepl.Cli;
 using CCRepl.Example;
 
-Repl repl = new(new SampleCommands(), new CounterCommands());
+Repl repl = new(new SampleCommands(), new CounterCommands(), new TestCommands());
 repl.ReqWriteLine += msg => Console.WriteLine(msg);
 repl.ReqWrite += msg => Console.Write(msg);
 repl.ReqInputAsync = (prompt, ct) =>

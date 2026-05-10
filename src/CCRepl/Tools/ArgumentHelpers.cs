@@ -1,4 +1,5 @@
 using CCRepl.Models;
+using System.Diagnostics;
 using System.IO.Pipes;
 using System.Linq.Expressions;
 using System.Reflection.Metadata.Ecma335;
@@ -143,7 +144,7 @@ public static class ArgumentHelpers
         if (!input.Contains('(')) return new Tokens(cmdHead, argStrs, options);
         ArgState ast = ArgState.Start;
         bool inArgs = true;
-        for (++i; inArgs; i++)
+        for (; inArgs; i++)
         {
             if (i >= input.Length) throw new ReplUserException("Unclosed arguments, missing ')'.");
             char c = input[i];
@@ -152,6 +153,7 @@ public static class ArgumentHelpers
             {
 
                 case ArgState.Start:
+                    Debug.WriteLine($"i = {i}, c = {c}");
                     switch (c)
                     {
                         case ' ': continue;

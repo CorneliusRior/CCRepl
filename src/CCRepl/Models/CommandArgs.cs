@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CCRepl.Tools;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -28,11 +29,12 @@ namespace CCRepl.Models
         public IReadOnlyList<string> ArgStrs { get; }
         public string CommandAddress { get; }
 
-        public CommandArgs(ReplContext ctx, ReplCommand cmd, IReadOnlyList<string> args, IReadOnlyList<string> options, CancellationToken ct)
+        public CommandArgs(ReplContext ctx, Tokens tokens, CancellationToken ct)
         {
+            ReplCommand cmd = ctx.FindCommand(tokens.CommandHead);
             CommandAddress = cmd.Address;
-            Options = options;
-            ArgStrs = args;
+            Options = tokens.Options;
+            ArgStrs = tokens.ArgStrings;
             IReadOnlyList<IArgSpec> specs = cmd.ArgSpecs;
 
             for (int i= 0; i < specs.Count; i++)
@@ -40,9 +42,9 @@ namespace CCRepl.Models
                 IArgSpec spec = specs[i];
 
                 // Argument is present:
-                if (i < args.Count)
+                if (i < ArgStrs.Count)
                 {
-                    string raw = args[i];
+                    string raw = ArgStrs[i];
 
                     if (!spec.Mode.IsRequired() && spec.PmtInfo.CancelStrings.Contains(raw)) _args.Add(spec.Fallback());
                     else _args.Add(spec.Parse(raw));
@@ -126,6 +128,21 @@ namespace CCRepl.Models
                 }
                 catch (ReplUserException) { ctx.WriteLine(info.RetryPrompt); }
             }
+        }
+
+        public string PrintInfo()
+        {
+            StringBuilder sb = new();
+            sb.AppendLine($"Command arguments for command '{CommandAddress}':");
+            sb.AppendLine("Arguments:");
+            foreach (IArgValue arg in _args) sb.AppendLine(arg.Print());
+            sb.AppendLine("\nOptions:");
+            sb.AppendLine(Options.PrintVec());
+            sb.AppendLine("\nArgStrs:");
+            sb.AppendLine(ArgStrs.PrintVec());
+            sb.AppendLine("Reconstructing the command (for fun):");
+            sb.Append(CommandAddress).Append('(').Append(string.Join(", ", ArgStrs)).Append(") ").Append(string.Join(' ', Options));
+            return sb.ToString();
         }
     }
 

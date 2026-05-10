@@ -164,7 +164,7 @@ namespace CCRepl.CommandSets
             .Build(),
 
             Cmd("Exit")
-            .Aliases("Close", "ExitProgram", "CloseProgram")
+            .Aliases("ext", "quit", "Close", "ExitProgram", "CloseProgram")
             .Exec(Exit)
             .Description("Closes the program (as long as ReqClear is set).")
             .Group("Base")

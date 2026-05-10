@@ -23,7 +23,7 @@ public sealed partial class Repl
     private readonly JsonSerializerOptions _jsonOptions = new();
     
     // Get command:
-    public ReplCommand GetCommand(string commandHead)
+    public ReplCommand FindCommand(string commandHead)
     {
         ReplCommand cmd;
         if (CommandIndex.ContainsKey(commandHead)) cmd = CommandIndex[commandHead];
@@ -63,7 +63,7 @@ public sealed partial class Repl
     /// <param name="args"></param>
     public async Task ExecuteCommandAsync(string commandHead, IReadOnlyList<string> args, CancellationToken ct = default)
     {
-        ReplCommand cmd = GetCommand(commandHead);
+        ReplCommand cmd = FindCommand(commandHead);
         if (!cmd.CanExecute) throw new ReplException($"Command '{commandHead}' has no ExecuteAsync method: cannot execute.");
         ReplContext ctx = new(this);
         await cmd.ExecuteAsync!(ctx, args, ct);
@@ -104,7 +104,7 @@ public sealed partial class Repl
     /// <returns></returns>
     public async Task<bool> TestCommandAsync(string commandHead, IReadOnlyList<string> args, CancellationToken ct = default)
     {
-        ReplCommand cmd = GetCommand(commandHead);
+        ReplCommand cmd = FindCommand(commandHead);
         if (!cmd.CanTest)
         {
             WriteLine($"Command {commandHead} as no TestAsync method: cannot test.");
@@ -147,7 +147,7 @@ public sealed partial class Repl
     // Json input:
     public async Task ExecuteJsonAsync(string commandHead, string json, CancellationToken ct = default)
     {
-        ReplCommand cmd = GetCommand(commandHead);
+        ReplCommand cmd = FindCommand(commandHead);
         if (!cmd.CanExecuteJson) throw new ReplException($"Command '{commandHead}' has no ExecuteJsonAsync method: cannot execute.");
         if (cmd.JsonPayloadType is null) throw new ReplException("Null JSON Payload - this command cannot parse JSON.");
 
@@ -161,7 +161,7 @@ public sealed partial class Repl
     {
         // Make sure command exists and can run:
         ReplCommand cmd;
-        try { cmd = GetCommand(commandHead); }
+        try { cmd = FindCommand(commandHead); }
         catch(ReplUserException ex) 
         {
             WriteLine(ex.Message);

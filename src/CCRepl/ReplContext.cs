@@ -84,11 +84,13 @@ public sealed class ReplContext
     /// </summary>
     public Task WithWaiterAsync(Func<CancellationToken, Task> action, string prefix = "Loading", string suffix = "", string finish = "Done", int frameTime = 100, CancellationToken ct = default, WaitAnimation animation = WaitAnimation.Spinner) => _repl.WithWaiterAsync(action, prefix, suffix, finish, frameTime, ct, animation);
 
-    
+
 
     // Commands used to call other commands:
+    public ReplCommand FindCommand(string commandHead) => _repl.FindCommand(commandHead);
     public Task ExecuteCommandAsync(string commandHead, IReadOnlyList<string> args, CancellationToken ct = default) => _repl.ExecuteCommandAsync(commandHead, args, ct);
     public Task<bool> TestCommandAsync(string commandHead, IReadOnlyList<string> args, CancellationToken ct = default) => _repl.TestCommandAsync(commandHead, args, ct);
+
 
     // Json:
     public Task ExecuteJsonAsync(string commandHead, string json, CancellationToken ct = default) => _repl.ExecuteJsonAsync(commandHead, json, ct);
