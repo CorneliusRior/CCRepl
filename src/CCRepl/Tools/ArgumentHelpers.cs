@@ -1,7 +1,24 @@
 using CCRepl.Models;
+using System.IO.Pipes;
+using System.Linq.Expressions;
+using System.Reflection.Metadata.Ecma335;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace CCRepl.Tools;
+
+public struct Tokens
+{
+    public string CommandHead;
+    public IReadOnlyList<string> ArgStrings;
+    public IReadOnlyList<string> Options;
+    public Tokens(string commandhead, IReadOnlyList<string> argStrings, IReadOnlyList<string> options)
+    {
+        CommandHead = commandhead;
+        ArgStrings = argStrings;
+        Options = options;
+    }
+}
 
 /// <summary>
 /// Methods for helping handle arguments in ReplCommands (Human Input). Contains:
@@ -52,6 +69,192 @@ public static class ArgumentHelpers
         if (inQuotes) throw new FormatException($"Unmatched quotes{(braceDepth < 1 ? "" : $" (Bracedepth = {braceDepth}, unmatched '{{'?)")}");
         if (sb.Length > 0) tokens.Add(sb.ToString());
         return tokens;
+    }
+
+    private enum HeadState
+    {
+        Start, 
+        Txt,
+        dot
+    }
+
+    private enum ArgState
+    {
+        Start,
+        Inter,
+        Free,
+        Quote,
+        Brace,
+        AwaitComma
+    }
+
+    public static Tokens TokenizeParen(this string input)
+    {
+        string cmdHead;
+        List<string> argStrs = new(), options = new();        
+
+        StringBuilder sb = new();
+        int i = 0;
+
+        void AppendArg()
+        {
+            argStrs.Add(sb.ToString());
+            sb.Clear();
+        }
+
+        // Find commandhead:
+        HeadState hst = HeadState.Start;
+        List<char> dots = [ '.', ' ', ',', '/' ];
+        bool inHead = true;
+        for (; i < input.Length && inHead; i++)
+        {
+            char c = input[i];
+            switch (hst)
+            {
+                case HeadState.Start:
+                    if (dots.Contains(c)) continue;
+                    if (c == '(') throw new ReplUserException("Unexpected '(', expected commandhead.");
+                    sb.Append(c);
+                    hst = HeadState.Txt;
+                    break;
+
+                case HeadState.Txt:
+                    if (dots.Contains(c))
+                    {
+                        hst = HeadState.dot;
+                        continue;
+                    }
+                    if (c == '(') inHead = false;
+                    else sb.Append(c);
+                    break;
+
+                case HeadState.dot:
+                    if (dots.Contains(c)) continue;
+                    if (c == '(') inHead = false;
+                    else sb.Append('.').Append(c);
+                    hst = HeadState.Txt;
+                    break;
+            }
+        }
+        cmdHead = sb.ToString();
+        sb.Clear();
+
+        // Find arguments:
+        if (!input.Contains('(')) return new Tokens(cmdHead, argStrs, options);
+        ArgState ast = ArgState.Start;
+        bool inArgs = true;
+        for (++i; inArgs; i++)
+        {
+            if (i >= input.Length) throw new ReplUserException("Unclosed arguments, missing ')'.");
+            char c = input[i];
+
+            switch (ast)
+            {
+
+                case ArgState.Start:
+                    switch (c)
+                    {
+                        case ' ': continue;
+                        case ',': argStrs.Add(""); ast = ArgState.Inter;    continue;   // Blank Argument
+                        case ')': inArgs = false;                           continue;
+                        case '"': ast = ArgState.Quote;                     continue;
+                        case '{': ast = ArgState.Brace;                     continue;
+                        default: ast = ArgState.Free; sb.Append(c);         continue;
+                    }
+
+                case ArgState.Inter:
+                    switch (c)
+                    {
+                        case ' ': continue;
+                        case ',': argStrs.Add("");                  continue;   // Blank Argument
+                        case ')': inArgs = false;                   continue;   // End of arguments
+                        case '"': ast = ArgState.Quote;             continue;
+                        case '{': ast = ArgState.Brace;             continue;
+                        default: ast = ArgState.Free; sb.Append(c); continue;
+                    }
+
+                case ArgState.Free:
+                    switch (c)
+                    {
+                        case ',': 
+                            AppendArg(); 
+                            ast = ArgState.Inter;    
+                            continue;
+                        case ')': 
+                            inArgs = false;                       
+                            continue;
+                        default: sb.Append(c);                          
+                            continue;
+                    }
+
+                case ArgState.Quote:
+                    switch (c)
+                    {
+                        case '"': 
+                            AppendArg(); ast = ArgState.AwaitComma;   
+                            continue;
+                        case '\\': 
+                            sb.Append(i + 1 < input.Length ? input[++i] : '\\'); 
+                            continue;
+                        default:
+                            sb.Append(c);
+                            continue;
+                    }
+
+                case ArgState.Brace:
+                    switch (c)
+                    {
+                        case '}': 
+                            AppendArg();
+                            ast = ArgState.Inter;
+                            continue;
+                        case '\\':
+                            if (i + 1 < input.Length)
+                            {
+                                switch (input[++i])
+                                {
+                                    case 'n': sb.Append('\n'); continue;
+                                    case 't': sb.Append('\t'); continue;
+                                    default: sb.Append(input[i]); continue;
+                                }
+                            }
+                            else sb.Append(c);
+                            continue;
+                        default:
+                            sb.Append(c);
+                            continue;
+                    }
+
+                case ArgState.AwaitComma:
+                    switch (c)
+                    {
+                        case ',': ast = ArgState.Inter; continue;
+                        case ' ': continue;
+                        case ')': inArgs = false;   continue; // end of arguments.
+                        default: throw new ReplUserException($"Expected ',' or ')': (pos {i} = '{c}') '{input}'");
+                    }
+
+            }
+        }
+        if (sb.Length > 0) AppendArg();
+
+        // Find optiosn:
+        if (++i < input.Length)
+        {
+            void AppendOption()
+            {
+                if (sb.Length > 0) options.Add(sb.ToString());
+                sb.Clear();
+            }
+            for (; i < input.Length; i++)
+            {
+                if (input[i] == ' ') AppendOption();
+                else sb.Append(input[i]);
+            }
+            AppendOption();
+        }
+
+        return new Tokens(cmdHead, argStrs, options);
     }
 
     // Argument extractors:
