@@ -10,7 +10,7 @@ namespace CCRepl.CommandSets
         public IReadOnlyList<ReplCommand> Commands =>
         [
             Cmd("Help")
-            .Exec(Help)
+            .StringExec(Help)
             .Aliases("h", "?")
             .Args(StrArg("Search Key", ArgMode.Optional))
             //.Usage("Help [string SearchKey]")
@@ -21,14 +21,14 @@ namespace CCRepl.CommandSets
 
                 Cmd("Tree")
                 .Aliases("t", "map")
-                .Exec(HelpTree)
+                .StringExec(HelpTree)
                 .Description("Prints full help tree")
                 .Group("Base")
                 .Build(),
 
                 Cmd("List")
                 .Aliases("l", "ls", "lst")
-                .Exec(HelpDescription)
+                .StringExec(HelpDescription)
                 .Usage("Help.List [string SearchKey]")
                 .Description("Lists all commands and descriptions, or lists commands and descriptions for all commands starting with SearchKey if specified.")
                 .Group("Base")
@@ -36,7 +36,7 @@ namespace CCRepl.CommandSets
 
                 Cmd("Full")
                 .Aliases("f", "fl")
-                .Exec(HelpFull)
+                .StringExec(HelpFull)
                 .Usage("Help.Full [string SearchKey]")
                 .Description("Shows full help information for all commands, or for all command starting with SearchKey if specified.")
                 .Group("Base")
@@ -44,7 +44,7 @@ namespace CCRepl.CommandSets
 
                 Cmd("Aliases")
                 .Aliases("a", "als")
-                .Exec(HelpAliases)
+                .StringExec(HelpAliases)
                 .Usage("Help.Aliases [string SearchKey]")
                 .Description("Lists all commands and their aliases, or lists all commands and description for all commands starting with SearchKey if specified.")
                 .Group("Base")
@@ -52,14 +52,14 @@ namespace CCRepl.CommandSets
 
                 Cmd("Description")
                 .Aliases("d", "desc")
-                .Exec(HelpDescription)
+                .StringExec(HelpDescription)
                 .Usage("Help.Description [string SearchKey]")
                 .Description("Lists all commands and descriptions, or lists commands and descriptions for all commands starting with SearchKey if specified.")
                 .Group("Base")
                 .Build(),
 
                 Cmd("Examples")
-                .Exec(HelpExamples)
+                .StringExec(HelpExamples)
                 .Aliases("e", "x", "exmpl")
                 .Usage("Help.Examples [string SearchKey]")
                 .Description("Lists all commands and examples, or lists commands and examples for all commands starting with SearchKey if specified.")
@@ -67,7 +67,7 @@ namespace CCRepl.CommandSets
                 .Build(),
 
                 Cmd("LongDescription")
-                .Exec(HelpLongDescription)
+                .StringExec(HelpLongDescription)
                 .Aliases("ld", "long", "LongDesc")
                 .Usage("Help.LongDescription")
                 .Description("Lists all commands and Long Descriptions, or lists all commands and long descriptions for all commands starting with SearchKey if specified")
@@ -79,14 +79,14 @@ namespace CCRepl.CommandSets
 
             Cmd("CommandList")
             .Aliases("cmd", "Commands", "Command")
-            .Exec(CommandList)
+            .StringExec(CommandList)
             .Description("Lists all commands.")
             .Group("Base")
             .Children(
 
                 Cmd("Aliases")
                 .Aliases("a", "all", "als")
-                .Exec(CommandListAliases)
+                .StringExec(CommandListAliases)
                 .Description("Lists all commands and aliases for each command.")
                 .Group("Base")
                 .Build()
@@ -95,7 +95,7 @@ namespace CCRepl.CommandSets
             .Build(),
 
             Cmd("Test")
-            .Exec(TestAsync)
+            .StringExec(TestAsync)
             .Usage("Test <string Command>")
             .Description("Runs the TestAsync method on specified command with specified arguments.")
             .Group("Base")
@@ -107,14 +107,14 @@ namespace CCRepl.CommandSets
             .Children(
 
                 Cmd("Run")
-                .Exec(JsonRunAsync)
+                .StringExec(JsonRunAsync)
                 .Usage("Json.Run <string CommandHead> [string Json]")
                 .Description("Manually runs a Json command.")
                 .Group("Base")
                 .Build(),
 
                 Cmd("Test")
-                .Exec(JsonTestAsync)
+                .StringExec(JsonTestAsync)
                 .Usage("Json.Run <string CommandHead> [string Json]")
                 .Description("Manually tests a Json command.")
                 .Group("Base")
@@ -129,7 +129,7 @@ namespace CCRepl.CommandSets
             .Children(
 
                 Cmd("Run")
-                .Exec(ScriptRunAsync)
+                .StringExec(ScriptRunAsync)
                 .Usage("Script.Run <string filePath>")
                 .Description("Runs a script from a file path. Tests first.")
                 .Group("Base")
@@ -137,7 +137,7 @@ namespace CCRepl.CommandSets
 
                     Cmd("Force")
                     .Aliases("Override")
-                    .Exec(ScriptRunForceAsync)
+                    .StringExec(ScriptRunForceAsync)
                     .Usage("Script.Run.Force <string filePath")
                     .Description("Runs a script from a file path without testing.")
                     .Group("Base")
@@ -147,7 +147,7 @@ namespace CCRepl.CommandSets
                 .Build(),
 
                 Cmd("Test")
-                .Exec(ScriptTestAsync)
+                .StringExec(ScriptTestAsync)
                 .Usage("Script.Test <string filePath>")
                 .Description("Tests a script from a file path.")
                 .Group("Base")
@@ -158,14 +158,14 @@ namespace CCRepl.CommandSets
 
             Cmd("Clear")
             .Aliases("ClearScreen", "clr")
-            .Exec(Clear)
+            .StringExec(Clear)
             .Description("Clears the screen (as long as ReqClear is set).")
             .Group("Base")
             .Build(),
 
             Cmd("Exit")
             .Aliases("ext", "quit", "Close", "ExitProgram", "CloseProgram")
-            .Exec(Exit)
+            .StringExec(Exit)
             .Description("Closes the program (as long as ReqClear is set).")
             .Group("Base")
             .Build()

@@ -10,7 +10,7 @@ namespace CCRepl
         [
             Cmd("NewExecute")
             .Aliases("newexex", "newex", "argexec", "commandargexec")
-            .Exec(NewExecute)
+            .StringExec(NewExecute)
             .Description("Testing new execution method, using CommandArg arguments instead of string lists.")
             .Group("Test")
             .Children(

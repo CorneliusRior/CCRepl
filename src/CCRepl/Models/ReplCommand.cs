@@ -12,17 +12,16 @@ public class ReplCommand
     public IReadOnlyList<ReplCommand> Children { get; init; }
     
     // Function:
-    public Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? ExecuteAsync { get; init; }
-    public bool CanExecute => ExecuteAsync is not null;
-    
-    // NewExecute: We will just replace execute with this eventually:
     public Func<ReplContext, CommandArgs, CancellationToken, Task>? NewExec { get; init; }
     public bool CanNewExecute => NewExec is not null;
-
-    public Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? TestAsync { get; init; }
-    public bool CanTest => TestAsync is not null;
-
     public IReadOnlyList<IArgSpec> ArgSpecs { get; init; } = [];
+    
+    // String execute uses a string list, legacy.
+    public Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? StringExecuteAsync { get; init; }
+    public bool CanStringExecute => StringExecuteAsync is not null;        
+    public Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? StringTestAsync { get; init; }
+    public bool CanStringTest => StringTestAsync is not null;
+
 
     public Func<ReplContext, object, CancellationToken, Task>? ExecuteJsonAsync { get; init; }
     public bool CanExecuteJson => ExecuteJsonAsync is not null;
@@ -45,10 +44,10 @@ public class ReplCommand
     [SetsRequiredMembers]
     public ReplCommand(
         string name,
-        Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? executeAsync = null,
         Func<ReplContext, CommandArgs, CancellationToken, Task>? newExec = null,
-        Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? testAsync = null,
         IReadOnlyList<IArgSpec>? argSpecs = null,
+        Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? stringExecuteAsync = null,
+        Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? stringTestAsync = null,
         Func<ReplContext, object, CancellationToken, Task>? executeJsonAsync = null,
         Func<ReplContext, object, CancellationToken, Task<bool>>? testJsonAsync = null,
         IReadOnlyList<string>? aliases = null,
@@ -62,12 +61,12 @@ public class ReplCommand
     )
     {
         Name = name;
-        ExecuteAsync = executeAsync;
         NewExec = newExec;
-        TestAsync = testAsync;
+        ArgSpecs = argSpecs ?? Array.Empty<IArgSpec>();
+        StringExecuteAsync = stringExecuteAsync;
+        StringTestAsync = stringTestAsync;
         ExecuteJsonAsync = executeJsonAsync;
         TestJsonAsync = testJsonAsync;
-        ArgSpecs = argSpecs ?? Array.Empty<IArgSpec>();
         Aliases = aliases ?? Array.Empty<string>();
         Usage = usage;
         Description = description;

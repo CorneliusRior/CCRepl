@@ -35,7 +35,7 @@ public sealed partial class Repl
     // Execute:
 
     /// <summary>
-    /// Attempts to parse the command and run the ExecuteAsync method on specified command with specified arguments. 
+    /// Attempts parse and run a command with string input.
     /// </summary>
     /// <param name="input"></param>
     /// <param name="ct"></param>
@@ -50,20 +50,9 @@ public sealed partial class Repl
             ReplContext ctx = new(this);
             CommandArgs args = new(ctx, tokens, ct);
 
-            if (cmd.CanNewExecute)
-            {
-                await cmd.NewExec!(ctx, args, ct);
-            }
-            else if (cmd.CanExecute)
-            {
-                await cmd.ExecuteAsync!(ctx, tokens.ArgStrings, ct);
-            }
+            if (cmd.CanNewExecute) await cmd.NewExec!(ctx, args, ct);
+            else if (cmd.CanStringExecute) await cmd.StringExecuteAsync!(ctx, tokens.ArgStrings, ct);
             else throw new ReplException($"Command '{tokens.CommandHead}' has no ExecuteAsync method: cannot execute.");
-
-            //List<string> tokens = input.Tokenize();
-            //string commandHead = tokens[0];
-            //IReadOnlyList<string> args = tokens.Skip(1).ToList();
-            //await ExecuteCommandAsync(commandHead, args, ct);
         }
         catch (OperationCanceledException) { WriteLine($"Cancelled."); }
         catch (ReplUserException ex) { WriteLine($"Input Error, {ex.Location} {ex.Message}"); }
@@ -80,9 +69,9 @@ public sealed partial class Repl
     public async Task ExecuteCommandAsync(string commandHead, IReadOnlyList<string> args, CancellationToken ct = default)
     {
         ReplCommand cmd = FindCommand(commandHead);
-        if (!cmd.CanExecute) throw new ReplException($"Command '{commandHead}' has no ExecuteAsync method: cannot execute.");
+        if (!cmd.CanStringExecute) throw new ReplException($"Command '{commandHead}' has no ExecuteAsync method: cannot execute.");
         ReplContext ctx = new(this);
-        await cmd.ExecuteAsync!(ctx, args, ct);
+        await cmd.StringExecuteAsync!(ctx, args, ct);
     }
 
     // Test:
@@ -121,13 +110,13 @@ public sealed partial class Repl
     public async Task<bool> TestCommandAsync(string commandHead, IReadOnlyList<string> args, CancellationToken ct = default)
     {
         ReplCommand cmd = FindCommand(commandHead);
-        if (!cmd.CanTest)
+        if (!cmd.CanStringTest)
         {
             WriteLine($"Command {commandHead} as no TestAsync method: cannot test.");
             return true;
         }
         ReplContext ctx = new(this);       
-        return await cmd.TestAsync!(ctx, args, ct);
+        return await cmd.StringTestAsync!(ctx, args, ct);
     }
 
     // Test and run:

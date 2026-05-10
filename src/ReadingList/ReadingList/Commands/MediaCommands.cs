@@ -19,7 +19,7 @@ namespace ReadingList.Commands
 
         public IReadOnlyList<ReplCommand> Commands =>
         [
-            Cmd("Wait").Exec(WaitAnimations).Build(),
+            Cmd("Wait").StringExec(WaitAnimations).Build(),
 
             Cmd("Media")
             .Aliases("m", "md", "Read", "ReadingList", "rd", "rdl")
@@ -28,8 +28,8 @@ namespace ReadingList.Commands
 
                 Cmd("Add")
                 .Aliases("a", "+", "New", "nw", "AddNew")
-                .Exec(MediaAdd)
-                .Test(MediaAddTest)
+                .StringExec(MediaAdd)
+                .StringTest(MediaAddTest)
                 .ExecJson<MediaAddPayload>(MediaAdd)
                 .TestJson<MediaAddPayload>(MediaAddTest)
                 .Usage("Media.Add <string Title> <string Type> <string Status> [int Release Year] [string Genre] [DateTime StartedOn] [DateTime FinishedOn] [string ProgressNote] [string Notes] [double Rating]")
@@ -42,7 +42,7 @@ namespace ReadingList.Commands
                     Cmd("Prompt")
                     .Aliases("p", "pmpt", "pmt", "async")
                     .Description("Adds a new piece of media through input prompts.")
-                    .Exec(MediaAddPromptAsync)
+                    .StringExec(MediaAddPromptAsync)
                     .Build()
 
                 )
@@ -50,13 +50,13 @@ namespace ReadingList.Commands
 
                 Cmd("Edit")
                 .Aliases("e", "update", "updt", "u")
-                .Exec(MediaEdit)
+                .StringExec(MediaEdit)
                 .Usage("Media.Edit <int Id> [string Title] [string Type] [string Status] [int Release Year] [string Genre] [DateTime StartedOn] [DateTime FinishedOn] [string ProgressNote] [string Notes] [double Rating]")
                 .Children(
 
                     Cmd("Prompt")
                     .Aliases("p", "pmpt", "pmt", "async")
-                    .Exec(MediaEditAsync)
+                    .StringExec(MediaEditAsync)
                     .Usage("Media.Edit.Prompt [int Id]")
                     .Build()
                 )
@@ -64,7 +64,7 @@ namespace ReadingList.Commands
 
                 Cmd("List")
                 .Aliases("l", "ls", "lst", "PrintAll", "Table", "tbl", "ReadingList")
-                .Exec(MediaList)
+                .StringExec(MediaList)
                 .Usage("Media.List [string SortBy]")
                 .Description("Lists all added media items.")
                 .LongDescription("Lists all added media items. Optional argument 'SortBy' has options 'Id', 'Title', 'Type', 'Status', 'Genre', 'Year', 'Creator', 'Rating', 'Started', 'Completed', 'Added' and 'Updated'.")
@@ -72,13 +72,13 @@ namespace ReadingList.Commands
 
                 Cmd("Show")
                 .Aliases("shw", "View", "vw", "v")
-                .Exec(MediaShow)
+                .StringExec(MediaShow)
                 .Usage("Media.Show <int Id>")
                 .Description("Shows all information for a particular media item.")
                 .Build(),
 
                 Cmd("Search")
-                .Exec(MediaSearch)
+                .StringExec(MediaSearch)
                 .Usage("Media.Search <string SearchKey> [string SortBy]")
                 .Description("Searches the reading list with given search key.")
                 .LongDescription("Searches the reading list with given search key. This works by building a 'SearchExpression' for each item consisting of 'Title Year Type Genre Creator': if searching for multiple of these, it needs to be in that order. Optional argument 'SortBy' has options 'Id', 'Title', 'Type', 'Status', 'Genre', 'Year', 'Creator', 'Rating', 'Started', 'Completed', 'Added' and 'Updated'.")
@@ -89,7 +89,7 @@ namespace ReadingList.Commands
 
                 Cmd("Status")
                 .Aliases("s", "st", "stat", "sts", "state")
-                .Exec(MediaStatus)
+                .StringExec(MediaStatus)
                 .Usage("Media.Status <int Id> <string Status>")
                 .Description("Set media status for a media item.")
                 .LongDescription($"Sets media status for a media item to the specified status. Available statuses are: {MediaStatusExt.MediaStatusList}.")
@@ -97,48 +97,48 @@ namespace ReadingList.Commands
 
                     Cmd("Planned")
                     .Aliases("Plan", "pln", "plnd", "Future", "ft", "ftr")
-                    .Exec(MediaSetStatusPlanned)
+                    .StringExec(MediaSetStatusPlanned)
                     .Usage("Media.Status.Planned <int Id>")
                     .Description("Set media status for specified media item as \"Planned\".")
                     .Build(),
 
                     Cmd("InProgress")
                     .Aliases("inp", "prg", "Progress", "prog", "Current", "Present")
-                    .Exec(MediaSetStatusInProgress)
+                    .StringExec(MediaSetStatusInProgress)
                     .Usage("Media.Status.InProgress <int Id>")
                     .Description("Set media status for specified media item as \"InProgress\".")
                     .Build(),
                             
                     Cmd("Completed")
                     .Aliases("c", "cplt", "Complete", "Finished", "Finish", "Done", "Read", "Watched")
-                    .Exec(MediaSetStatusCompleted)
+                    .StringExec(MediaSetStatusCompleted)
                     .Usage("Media.Status.Completed <int Id>")
                     .Description("Set media status for specified media item as \"Completed\".")
                     .Build(),
 
                     Cmd("Dropped")
                     .Aliases("d", "drp", "drpd", "GiveUp", "GiveIn", "Abandoned")
-                    .Exec(MediaSetStatusDropped)
+                    .StringExec(MediaSetStatusDropped)
                     .Usage("Media.Status.Dropped <int Id>")
                     .Description("Set media status for specified media item as \"Dropped\".")
                     .Build(),
 
                     Cmd("Paused")
                     .Aliases("psd", "Break", "brk")
-                    .Exec(MediaSetStatusPaused)
+                    .StringExec(MediaSetStatusPaused)
                     .Usage("Media.Status.Paused <int Id>")
                     .Description("Set media status for specified media item as \"Paused\".")
                     .Build(),
 
                     Cmd("AwaitingNew")
                     .Aliases("a", "an", "Awaiting", "Waiting", "wtn")
-                    .Exec(MediaSetStatusAwaitingNew)
+                    .StringExec(MediaSetStatusAwaitingNew)
                     .Usage("Media.Static.AwaitingNew <int Id>")
                     .Description("Set media status for specified media item as \"AwaitingNew\".")
                     .Build(),
 
                     Cmd("Other")
-                    .Exec(MediaSetStatusOther)
+                    .StringExec(MediaSetStatusOther)
                     .Usage("Media.Status.Other <int Id>")
                     .Description("Set media status for specified media item as \"Other\".")
                     .Build()
@@ -147,13 +147,13 @@ namespace ReadingList.Commands
 
                 Cmd("Rate")
                 .Aliases("r", "rt", "judge")
-                .Exec(MediaRate)
+                .StringExec(MediaRate)
                 .Description("Rate a piece of media out of 10.")
                 .Build(),
 
                 Cmd("Note")
                 .Aliases("n", "Notes", "nt")
-                .Exec(MediaNote)
+                .StringExec(MediaNote)
                 .Usage("Media.Note <int Id> [string Note]")
                 .Description("Set note, or append note for entry if one exists.")
                 .LongDescription("Will check if there is a note for Id, if there is one, will append, if not, will set (override). If argument \"Note\" is not given, will be prompted.")
@@ -161,21 +161,21 @@ namespace ReadingList.Commands
 
                     Cmd("Override")
                     .Aliases("o", "ovr", "ovrd", "Replace", "Rplc")
-                    .Exec(MediaNoteOverride)
+                    .StringExec(MediaNoteOverride)
                     .Usage("Media.Note.Override <int Id> [string Note]")
                     .Description("Sets note, overriding any existing notes.")
                     .Build(),
                             
                     Cmd("Append")
                     .Aliases("a", "app", "apnd", "add")
-                    .Exec(MediaNoteAppend)
+                    .StringExec(MediaNoteAppend)
                     .Usage("Media.Note.Append <int Id> [string Note]")
                     .Description("Appends text to the end of a note.")
                     .Build(),
 
                     Cmd("Progress")
                     .Aliases("Prog", "ProgNote", "pn", "ProgressNote")
-                    .Exec(MediaProgress)
+                    .StringExec(MediaProgress)
                     .Usage("Media.Progress <int Id> [string Note]")
                     .Description("Sets Progress note")
                     .LongDescription("Sets the progress note for the specified media item. Will override anything that exists there presently.\nThe idea of a progress note is to note where you last left off so you know where to pick up next time, a book mark essentially, e.g. \"Chapter 5\", \"Episode 5\", \"1hr 5mins in\", &c.\nCanonical version of this command is 'Media.Progress'.")
@@ -186,7 +186,7 @@ namespace ReadingList.Commands
 
                 Cmd("Progress")
                 .Aliases("Prog", "ProgNote", "pn", "ProgressNote")
-                .Exec(MediaProgress)
+                .StringExec(MediaProgress)
                 .Usage("Media.Progress <int Id> [string Note]")
                 .Description("Sets Progress note")
                 .LongDescription("Sets the progress note for the specified media item. Will override anything that exists there presently.\nThe idea of a progress note is to note where you last left off so you know where to pick up next time, a book mark essentially, e.g. \"Chapter 5\", \"Episode 5\", \"1hr 5mins in\", &c.\nFor a more permanant record, see 'Media.Notes'.")
@@ -194,7 +194,7 @@ namespace ReadingList.Commands
 
                 Cmd("Delete")
                 .Aliases("d", "del", "rm", "Remove", "Erase")
-                .Exec(MediaDelete)
+                .StringExec(MediaDelete)
                 .Usage("Media.Delete <int Id>")
                 .Description("Deletes a media item from the list.")
                 .Build()
@@ -203,7 +203,7 @@ namespace ReadingList.Commands
             .Build(),
 
             Cmd("Stats")
-            .Exec(StatsSummary)
+            .StringExec(StatsSummary)
             .Description("Displays some information about reading list.")
             .Build()
         ];

@@ -12,8 +12,8 @@ namespace CCRepl.Cli2
         public IReadOnlyList<ReplCommand> Commands =>
         [
             new(name: "Assessment",                
-                executeAsync: ConfirmAsync,
-                testAsync: ConfirmTestAsync,
+                stringExecuteAsync: ConfirmAsync,
+                stringTestAsync: ConfirmTestAsync,
                 description: "Asks for your assessment on a number of topics."               
             ),
             Cmd("TestJson")
@@ -21,14 +21,14 @@ namespace CCRepl.Cli2
                 .TestJson<TestPayload>(TestTestJsonAsync)            
             .Build(),
 
-            Cmd("ToBox").Exec(ToBox)
+            Cmd("ToBox").StringExec(ToBox)
                 .Children(
-                Cmd("Double").Exec(ToDoubleBox).Build())
+                Cmd("Double").StringExec(ToDoubleBox).Build())
             .Build(),
 
-            Cmd("TextAnimations").Exec(WaitAnimations).Aliases("ta", "wait").Build(),
+            Cmd("TextAnimations").StringExec(WaitAnimations).Aliases("ta", "wait").Build(),
 
-            Cmd("ViewFileSample").Exec(ViewFileSample).Build()
+            Cmd("ViewFileSample").StringExec(ViewFileSample).Build()
         ];
 
         private async Task ViewFileSample(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)

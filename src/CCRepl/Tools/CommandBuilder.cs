@@ -19,9 +19,9 @@ namespace CCRepl.Tools
         private readonly List<string> _examples = [];
         private readonly List<ReplCommand> _children = [];
 
-        private Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? _executeAsync;
+        private Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? _stringExecuteAsync;
         private Func<ReplContext, CommandArgs, CancellationToken, Task>? _newExec;
-        private Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? _testAsync;
+        private Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? _stringTestAsync;
         private List<IArgSpec> _argSpecs = [];
 
         private Func<ReplContext, object, CancellationToken, Task>? _executeJsonAsync;
@@ -43,12 +43,12 @@ namespace CCRepl.Tools
         {
             return new ReplCommand(
                 name:               _name,
-                executeAsync:       _executeAsync,
                 newExec:            _newExec,
-                testAsync:          _testAsync,
+                argSpecs:           _argSpecs,
+                stringExecuteAsync: _stringExecuteAsync,
+                stringTestAsync:    _stringTestAsync,
                 executeJsonAsync:   _executeJsonAsync,
                 testJsonAsync:      _testJsonAsync,
-                argSpecs:           _argSpecs,
                 aliases:            _aliases,
                 usage:              _usage,
                 description:        _description,
@@ -78,21 +78,21 @@ namespace CCRepl.Tools
 
         public CommandBuilder AliasAdd(string alias) => AddAlias(alias);
 
-        public CommandBuilder Exec(Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task> executeAsync)
-        {
-            _executeAsync = executeAsync;
-            return this;
-        }
-
         public CommandBuilder NewExec(Func<ReplContext, CommandArgs, CancellationToken, Task> newExec)
         {
             _newExec = newExec;
             return this;
         }
 
-        public CommandBuilder Test(Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>> testAsync)
+        public CommandBuilder StringExec(Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task> executeAsync)
         {
-            _testAsync = testAsync;
+            _stringExecuteAsync = executeAsync;
+            return this;
+        }
+
+        public CommandBuilder StringTest(Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>> testAsync)
+        {
+            _stringTestAsync = testAsync;
             return this;
         }
 
