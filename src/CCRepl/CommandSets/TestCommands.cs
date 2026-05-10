@@ -17,7 +17,7 @@ namespace CCRepl
                 
                 Cmd("TestCmd")
                 .Aliases("parsecmd", "cmd")
-                .NewExec(NewExecuteTestCmd)
+                .Exec(NewExecuteTestCmd)
                 .Args(
                     IntArg("A"),
                     DblArg("B", ArgMode.RequiredPrompt),

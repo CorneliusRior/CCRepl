@@ -34,8 +34,32 @@ public sealed partial class Repl
 
     // Execute:
 
+
     /// <summary>
-    /// Attempts parse and run a command with string input.
+    /// Tuns a command with token input.
+    /// </summary>
+    /// <param name="tokens"></param>
+    /// <param name="ct"></param>
+    /// <returns></returns>
+    public async Task ExecuteAsync(Tokens tokens, CancellationToken ct = default)
+    {
+        try
+        {
+            ReplCommand cmd = FindCommand(tokens.CommandHead);
+            ReplContext ctx = new(this);
+
+            if (cmd.CanNewExecute) await cmd.ExecuteAsync!(ctx, new(ctx, tokens, ct), ct);
+            else if (cmd.CanStringExecute) await cmd.StringExecuteAsync!(ctx, tokens.ArgStrings, ct);
+            else throw new ReplException($"Command '{tokens.CommandHead}' has no ExecuteAsync method: cannot execute.");
+        }
+        catch (OperationCanceledException) { WriteLine($"Cancelled."); }
+        catch (ReplUserException ex) { WriteLine($"Input Error, {ex.Location} {ex.Message}"); }
+        catch (ReplException ex) { WriteLine($"Error in {ex.Location} {ex.Message}"); }
+        catch (Exception ex) { WriteLine($"Error: {ex.Message}"); }
+    }
+
+    /// <summary>
+    /// Overload which parses first.
     /// </summary>
     /// <param name="input"></param>
     /// <param name="ct"></param>
@@ -43,17 +67,7 @@ public sealed partial class Repl
     public async Task ExecuteAsync(string input, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(input)) return;
-        try
-        {
-            Tokens tokens = input.TokenizeParen();
-            ReplCommand cmd = FindCommand(tokens.CommandHead);
-            ReplContext ctx = new(this);
-            CommandArgs args = new(ctx, tokens, ct);
-
-            if (cmd.CanNewExecute) await cmd.NewExec!(ctx, args, ct);
-            else if (cmd.CanStringExecute) await cmd.StringExecuteAsync!(ctx, tokens.ArgStrings, ct);
-            else throw new ReplException($"Command '{tokens.CommandHead}' has no ExecuteAsync method: cannot execute.");
-        }
+        try { await ExecuteAsync(input.TokenizeParen(), ct); }
         catch (OperationCanceledException) { WriteLine($"Cancelled."); }
         catch (ReplUserException ex) { WriteLine($"Input Error, {ex.Location} {ex.Message}"); }
         catch (ReplException ex) { WriteLine($"Error in {ex.Location} {ex.Message}"); }
@@ -82,71 +96,60 @@ public sealed partial class Repl
     /// <param name="input"></param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    public async Task TestAsync(string input, CancellationToken ct = default)
+    public async Task<bool> TestAsync(Tokens tokens, CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(input)) return;
         try
         {
-            List<string> tokens = input.Tokenize();
-            string commandHead = tokens[0];
-            IReadOnlyList<string> args = tokens.Skip(1).ToList();
-            bool ok = await TestCommandAsync(commandHead, args, ct);
-            if (ok) WriteLine($"[SUCCESS]: '{input}'.");
-            else WriteLine($"[FAILURE]: '{input}'.");
+            ReplCommand cmd = FindCommand(tokens.CommandHead);
+            ReplContext ctx = new(this);
+            bool ok;
+
+            if (cmd.CanNewTest) ok = await cmd.TestAsync!(ctx, new(ctx, tokens, ct), ct);
+            else if (cmd.CanStringTest) ok = await cmd.StringTestAsync!(ctx, tokens.ArgStrings, ct);
+            else
+            {
+                WriteLine($"Command {cmd.Address} has no TestAsync method: cannot test.");
+                ok = true;
+            }
+
+            if (ok) WriteLine($"[SUCCESS]: '{tokens.Print()}'.");
+            else WriteLine($"[FAILURE]: '{tokens.Print()}'.");
+            return ok;
         }
+        catch (OperationCanceledException) { WriteLine($"Cancelled."); }
         catch (ReplUserException ex) { WriteLine($"Input Error, {ex.Location} {ex.Message}"); }
         catch (ReplException ex) { WriteLine($"Error in {ex.Location} {ex.Message}"); }
         catch (Exception ex) { WriteLine($"Error: {ex.Message}"); }
-        
+        return false;
     }
 
     /// <summary>
-    /// Runs the TestAsync method on the specified command with specified arguments. This is kept separate from TestAsync so that commands can test other commands directly. Returns true if there is no TestAsync method.
+    /// Overload which parses first
     /// </summary>
-    /// <param name="commandHead"></param>
-    /// <param name="args"></param>
+    /// <param name="input"></param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    public async Task<bool> TestCommandAsync(string commandHead, IReadOnlyList<string> args, CancellationToken ct = default)
+    public async Task<bool> TestAsync(string input, CancellationToken ct = default)
     {
-        ReplCommand cmd = FindCommand(commandHead);
-        if (!cmd.CanStringTest)
-        {
-            WriteLine($"Command {commandHead} as no TestAsync method: cannot test.");
-            return true;
-        }
-        ReplContext ctx = new(this);       
-        return await cmd.StringTestAsync!(ctx, args, ct);
+        if (string.IsNullOrWhiteSpace(input)) return true;
+        try { return await TestAsync(input.TokenizeParen(), ct); }
+        catch (OperationCanceledException) { WriteLine($"Cancelled."); }
+        catch (ReplUserException ex) { WriteLine($"Input Error, {ex.Location} {ex.Message}"); }
+        catch (ReplException ex) { WriteLine($"Error in {ex.Location} {ex.Message}"); }
+        catch (Exception ex) { WriteLine($"Error: {ex.Message}"); }
+        return false;
     }
 
-    // Test and run:
-
     /// <summary>
-    /// Attempts to parse the command, runs TestAsync, if it returns true, run the command, otherwise, does nothing.
+    /// Tests command, runs if successful, otherwise doesn't.
     /// </summary>
     /// <param name="input"></param>
     /// <param name="ct"></param>
     /// <returns></returns>
     public async Task TestAndExecuteAsync(string input, CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(input)) return;
-        try
-        {
-            List<string> tokens = input.Tokenize();
-            string commandHead = tokens[0];
-            IReadOnlyList<string> args = tokens.Skip(1).ToList();
-            WriteLine($"Testing '{commandHead}'...");
-            bool ok = await TestCommandAsync(commandHead, args, ct);
-            if (!ok)
-            {
-                WriteLine($"[FAILURE]: Command '{input}' TestAsync returned false: not executing.");
-                return;
-            }            
-            await ExecuteCommandAsync(commandHead, args, ct);
-        }
-        catch (ReplUserException ex) { WriteLine($"Input Error, {ex.Location} {ex.Message}"); }
-        catch (ReplException ex) { WriteLine($"Error in {ex.Location} {ex.Message}"); }
-        catch (Exception ex) { WriteLine($"Error: {ex.Message}"); }
+        if (await TestAsync(input, ct)) await ExecuteAsync(input, ct);
+        else WriteLine($"Failed test, not executing: '{input}'.");
     }
 
     // Json input:

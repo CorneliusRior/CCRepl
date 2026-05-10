@@ -19,6 +19,8 @@ public struct Tokens
         ArgStrings = argStrings;
         Options = options;
     }
+
+    public string Print() => $"{CommandHead} ({string.Join(", ", ArgStrings)}) {string.Join(' ', Options)}";
 }
 
 /// <summary>

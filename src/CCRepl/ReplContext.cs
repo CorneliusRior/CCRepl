@@ -1,5 +1,6 @@
 using CCRepl.Models;
 using CCRepl.Scripting;
+using CCRepl.Tools;
 
 namespace CCRepl;
 
@@ -88,8 +89,10 @@ public sealed class ReplContext
 
     // Commands used to call other commands:
     public ReplCommand FindCommand(string commandHead) => _repl.FindCommand(commandHead);
-    public Task ExecuteCommandAsync(string commandHead, IReadOnlyList<string> args, CancellationToken ct = default) => _repl.ExecuteCommandAsync(commandHead, args, ct);
-    public Task<bool> TestCommandAsync(string commandHead, IReadOnlyList<string> args, CancellationToken ct = default) => _repl.TestCommandAsync(commandHead, args, ct);
+    public Task ExecuteAsync(string input, CancellationToken ct = default) => _repl.ExecuteAsync(input, ct);
+    public Task ExecuteAsync(Tokens tokens, CancellationToken ct = default) => _repl.ExecuteAsync(tokens, ct);
+    public Task<bool> TestAsync(string input, CancellationToken ct = default) => _repl.TestAsync(input, ct);
+    public Task<bool> TestAsync(Tokens tokens, CancellationToken ct = default) => _repl.TestAsync(tokens, ct);
 
 
     // Json:

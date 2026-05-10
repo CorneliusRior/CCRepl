@@ -19,10 +19,11 @@ namespace CCRepl.Tools
         private readonly List<string> _examples = [];
         private readonly List<ReplCommand> _children = [];
 
-        private Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? _stringExecuteAsync;
-        private Func<ReplContext, CommandArgs, CancellationToken, Task>? _newExec;
-        private Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? _stringTestAsync;
+        private Func<ReplContext, CommandArgs, CancellationToken, Task>? _executeAsync;
+        private Func<ReplContext, CommandArgs, CancellationToken, Task<bool>>? _testAsync;
         private List<IArgSpec> _argSpecs = [];
+        private Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? _stringExecuteAsync;
+        private Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? _stringTestAsync;
 
         private Func<ReplContext, object, CancellationToken, Task>? _executeJsonAsync;
         private Func<ReplContext, object, CancellationToken, Task<bool>>? _testJsonAsync;
@@ -43,7 +44,8 @@ namespace CCRepl.Tools
         {
             return new ReplCommand(
                 name:               _name,
-                newExec:            _newExec,
+                executeAsync:       _executeAsync,
+                testAsync:          _testAsync,
                 argSpecs:           _argSpecs,
                 stringExecuteAsync: _stringExecuteAsync,
                 stringTestAsync:    _stringTestAsync,
@@ -78,9 +80,15 @@ namespace CCRepl.Tools
 
         public CommandBuilder AliasAdd(string alias) => AddAlias(alias);
 
-        public CommandBuilder NewExec(Func<ReplContext, CommandArgs, CancellationToken, Task> newExec)
+        public CommandBuilder Exec(Func<ReplContext, CommandArgs, CancellationToken, Task> newExec)
         {
-            _newExec = newExec;
+            _executeAsync = newExec;
+            return this;
+        }
+
+        public CommandBuilder Test(Func<ReplContext, CommandArgs, CancellationToken, Task<bool>> testAsync)
+        {
+            _testAsync = testAsync;
             return this;
         }
 

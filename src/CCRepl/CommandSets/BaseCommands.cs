@@ -95,9 +95,10 @@ namespace CCRepl.CommandSets
             .Build(),
 
             Cmd("Test")
-            .StringExec(TestAsync)
-            .Usage("Test <string Command>")
-            .Description("Runs the TestAsync method on specified command with specified arguments.")
+            .Exec(TestAsync)
+            .Args(StrArg("Command Input", ArgMode.RequiredPrompt))
+            .Description("Runs the TestAsync method on specified command with specified arguments. Prompts if no input is given.")
+            .Examples("Test({Diary.Add(This is a test entry) -f})")
             .Group("Base")
             .Build(),
 
@@ -286,11 +287,10 @@ namespace CCRepl.CommandSets
             return Task.CompletedTask;
         }
 
-        private async Task TestAsync(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        private async Task TestAsync(ReplContext ctx, CommandArgs args, CancellationToken ct)
         {
-            string commandHead = args[0];
-            IReadOnlyList<string> testArgs = args.Skip(1).ToList();
-            bool success = await ctx.TestCommandAsync(commandHead, args, ct);
+            Tokens tokens = args.GetRequired<string>(0).TokenizeParen();
+            bool success = await ctx.TestAsync(tokens, ct);
             if (success) ctx.WriteLine($"No issues found: '{string.Join(' ', args)}'.");
             else ctx.WriteLine($"Failed test: '{string.Join(' ', args)}'.");
         }

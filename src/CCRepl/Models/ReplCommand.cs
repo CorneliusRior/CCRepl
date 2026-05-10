@@ -12,9 +12,12 @@ public class ReplCommand
     public IReadOnlyList<ReplCommand> Children { get; init; }
     
     // Function:
-    public Func<ReplContext, CommandArgs, CancellationToken, Task>? NewExec { get; init; }
-    public bool CanNewExecute => NewExec is not null;
+    public Func<ReplContext, CommandArgs, CancellationToken, Task>? ExecuteAsync { get; init; }
+    public bool CanNewExecute => ExecuteAsync is not null;
+    public Func<ReplContext, CommandArgs, CancellationToken, Task<bool>>? TestAsync { get; init; }
+    public bool CanNewTest => TestAsync is not null;
     public IReadOnlyList<IArgSpec> ArgSpecs { get; init; } = [];
+
     
     // String execute uses a string list, legacy.
     public Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? StringExecuteAsync { get; init; }
@@ -22,7 +25,7 @@ public class ReplCommand
     public Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? StringTestAsync { get; init; }
     public bool CanStringTest => StringTestAsync is not null;
 
-
+    // Json:
     public Func<ReplContext, object, CancellationToken, Task>? ExecuteJsonAsync { get; init; }
     public bool CanExecuteJson => ExecuteJsonAsync is not null;
 
@@ -44,7 +47,8 @@ public class ReplCommand
     [SetsRequiredMembers]
     public ReplCommand(
         string name,
-        Func<ReplContext, CommandArgs, CancellationToken, Task>? newExec = null,
+        Func<ReplContext, CommandArgs, CancellationToken, Task>? executeAsync = null,
+        Func<ReplContext, CommandArgs, CancellationToken, Task<bool>>? testAsync = null,
         IReadOnlyList<IArgSpec>? argSpecs = null,
         Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? stringExecuteAsync = null,
         Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? stringTestAsync = null,
@@ -61,7 +65,8 @@ public class ReplCommand
     )
     {
         Name = name;
-        NewExec = newExec;
+        ExecuteAsync = executeAsync;
+        TestAsync = testAsync;
         ArgSpecs = argSpecs ?? Array.Empty<IArgSpec>();
         StringExecuteAsync = stringExecuteAsync;
         StringTestAsync = stringTestAsync;
