@@ -1,6 +1,7 @@
 using CCRepl.Models;
 using CCRepl.Scripting;
 using CCRepl.Tools;
+using System.Text;
 using static CCRepl.Tools.CmdBuilder;
 
 namespace CCRepl.CommandSets
@@ -10,67 +11,45 @@ namespace CCRepl.CommandSets
         public IReadOnlyList<ReplCommand> Commands =>
         [
             Cmd("Help")
-            .StringExec(Help)
             .Aliases("h", "?")
-            .Args(StrArg("Search Key", ArgMode.Optional))
-            //.Usage("Help [string SearchKey]")
+            .Exec(Help)
+            .Args(StrArg("Search Key", ArgMode.Optional, ""))
+            .Optn("-a", "-d", "-e", "-f", "-u", "-g", "-l", "-o")
             .Description("Lists all commands and descriptions, or shows full help for all commands starting with Search Key if specified.")
-            .Examples("Help", "Help Diary.Add")
+            .LongDescription(
+                @"Lists all commands and descriptions, or full help for all commands starting with Search Key. Behaviour altered with options:
+ * '-a' ('aliases'): Prints list of all aliases for that command node (to see full list of all possible combinations, see Help.Alias).
+ * '-d' ('description'): Prints full description without truncation.
+ * '-e' ('example'): Prints example usages.
+ * '-f' ('full'): Prints full info regardless of search key presence.
+ * '-g' ('group'): Prints by group (by default only done with no search term. Use '-o' to ungroup that)
+ * '-l' ('longdescription'): Prints full long description without truncation.
+ * '-o' ('oneline', also '-ol'): Prints description regardless of search key presence.
+ * '-u' ('usage'): Prints usage statements instead of description.
+Checks for options with 'startswith'. Only the first valid options is used (except for '-g').")
+            .Examples(
+                "Help", 
+                "Help(Diary.Add)",
+                "Help(Diary) -usage")
             .Group("Base")
             .Children(
 
                 Cmd("Tree")
                 .Aliases("t", "map")
-                .StringExec(HelpTree)
+                .Exec(HelpTree)
                 .Description("Prints full help tree")
-                .Group("Base")
-                .Build(),
-
-                Cmd("List")
-                .Aliases("l", "ls", "lst")
-                .StringExec(HelpDescription)
-                .Usage("Help.List [string SearchKey]")
-                .Description("Lists all commands and descriptions, or lists commands and descriptions for all commands starting with SearchKey if specified.")
-                .Group("Base")
-                .Build(),
-
-                Cmd("Full")
-                .Aliases("f", "fl")
-                .StringExec(HelpFull)
-                .Usage("Help.Full [string SearchKey]")
-                .Description("Shows full help information for all commands, or for all command starting with SearchKey if specified.")
                 .Group("Base")
                 .Build(),
 
                 Cmd("Aliases")
                 .Aliases("a", "als")
-                .StringExec(HelpAliases)
-                .Usage("Help.Aliases [string SearchKey]")
-                .Description("Lists all commands and their aliases, or lists all commands and description for all commands starting with SearchKey if specified.")
-                .Group("Base")
-                .Build(),
-
-                Cmd("Description")
-                .Aliases("d", "desc")
-                .StringExec(HelpDescription)
-                .Usage("Help.Description [string SearchKey]")
-                .Description("Lists all commands and descriptions, or lists commands and descriptions for all commands starting with SearchKey if specified.")
-                .Group("Base")
-                .Build(),
-
-                Cmd("Examples")
-                .StringExec(HelpExamples)
-                .Aliases("e", "x", "exmpl")
-                .Usage("Help.Examples [string SearchKey]")
-                .Description("Lists all commands and examples, or lists commands and examples for all commands starting with SearchKey if specified.")
-                .Group("Base")
-                .Build(),
-
-                Cmd("LongDescription")
-                .StringExec(HelpLongDescription)
-                .Aliases("ld", "long", "LongDesc")
-                .Usage("Help.LongDescription")
-                .Description("Lists all commands and Long Descriptions, or lists all commands and long descriptions for all commands starting with SearchKey if specified")
+                .Exec(HelpAliases)
+                .Args(StrArg("Search Key", ArgMode.Optional, ""))
+                .Optn("-g")
+                .Description("Lists all aliases and their canonical names for all commands, or for all commands and aliases starting with Search Key is specified.")
+                .LongDescription(@"Lists all combinations of aliases and their canonical names for all commands, or for all commands and aliases starting with Search Key is specified.
+Behaviour can be altered with options:
+ * '-g' ('group'): Prints by group.")
                 .Group("Base")
                 .Build()
 
@@ -172,52 +151,68 @@ namespace CCRepl.CommandSets
             .Build()
         ];
 
-        private Task Help(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        private Task Help(ReplContext ctx, CommandArgs args, CancellationToken ct)
         {
-            string? searchKey = args.StringOrNull(0, "SearchKey");
-            if (searchKey is null) HelpPrintshort(ctx, HelpAttribute.Description, "", true);
-            else HelpPrintLong(ctx, searchKey);
+            string searchKey = args.GetOr<string>(0, "");
+            string mode = args.FirstOptionStart("-a", "-d", "-e", "-f", "-l", "-o", "-ol", "-u");
+            switch (mode)
+            {
+                case "-a": HelpPrintshort(ctx, HelpAttribute.Aliases, searchKey, false, args.OptStrt("-g")); break;
+                case "-d": HelpPrintshort(ctx, HelpAttribute.Description, searchKey, false, args.OptStrt("-g")); break;
+                case "-e": HelpPrintshort(ctx, HelpAttribute.Examples, searchKey, false, args.OptStrt("-g")); break;
+                case "-f": HelpPrintLong(ctx, searchKey); break;
+                case "-l": HelpPrintshort(ctx, HelpAttribute.LongDescription, searchKey, false, args.OptStrt("-g")); break;
+                case "-ol":
+                case "-o": HelpPrintshort(ctx, HelpAttribute.Description, searchKey, true, args.OptStrt("-g")); break;
+                case "-u": HelpPrintshort(ctx, HelpAttribute.Usage, searchKey, true, args.OptStrt("-g")); break;
+                default:
+                    if (string.IsNullOrWhiteSpace(searchKey)) HelpPrintshort(ctx, HelpAttribute.Description, "", true);
+                    else HelpPrintLong(ctx, searchKey);
+                    break;
+            };
             return Task.CompletedTask;
         }
 
-        private Task HelpTree(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        private Task HelpTree(ReplContext ctx, CommandArgs args, CancellationToken ct)
         {
             ctx.WriteLine(ctx.BuildRootTree());
             return Task.CompletedTask;
         }
 
-        private Task HelpDescription(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
+        private Task HelpAliases(ReplContext ctx, CommandArgs args, CancellationToken ct)
         {
-            string searchKey = args.StringOr(0, "SearchKey", "");
-            HelpPrintshort(ctx, HelpAttribute.Description, searchKey, true);
-            return Task.CompletedTask;
-        }
+            string inputKey = args.GetR<string>(0);
+            string sk = inputKey.DotSeparated();
 
-        private Task HelpFull(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
-        {
-            string searchKey = args.StringOr(0, "SearchKey", "");
-            HelpPrintLong(ctx, searchKey);
-            return Task.CompletedTask;
-        }
+            // Filter
+            var filtered = 
+                ctx.AliasIndex
+                .Where(it => it.Key.StartsWith(sk, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(it => it.Value.Address);
 
-        private Task HelpAliases(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
-        {
-            string searchKey = args.StringOr(0, "SearchKey", "");
-            HelpPrintshort(ctx, HelpAttribute.Aliases, searchKey, true);
-            return Task.CompletedTask;
-        }
+            int col = Math.Min(filtered.Max(kv => kv.Key.Length + kv.Value.Address.Length + 5), (ctx.OneLineMaxWidth - 10) / 2);
 
-        private Task HelpExamples(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
-        {
-            string searchKey = args.StringOr(0, "SearchKey", "");
-            HelpPrintshort(ctx, HelpAttribute.Examples, searchKey, false);
-            return Task.CompletedTask;
-        }
+            StringBuilder sb = new();
 
-        private Task HelpLongDescription(ReplContext ctx, IReadOnlyList<string> args, CancellationToken ct)
-        {
-            string searchKey = args.StringOr(0, "SearchKey", "");
-            HelpPrintshort(ctx, HelpAttribute.LongDescription, searchKey, false);
+            if (args.HasOptStart("-g"))
+            {
+                ctx.WriteLine("Not yet implemented.");
+            }
+            else
+            {
+                int count = 0;
+                foreach(var it in filtered)
+                {
+                    sb.AppendLine(it.Key.ToIndexLine(it.Value.Address, col));
+                    count++;
+                }
+                ctx.WriteLine($"Printing all commands and aliases{(string.IsNullOrWhiteSpace(sk) ? "" : sk)} ({count} total):\n");
+                ctx.WriteLine(sb.ToString());
+
+                ctx.WriteLine();
+                string report = $"{count} total aliases{(string.IsNullOrWhiteSpace(sk) ? "" : $" starting with {sk} found")} for {ctx.SearchDictionary(sk).Count} commands.";
+                ctx.WriteLine(report.ToBox(boxWidth: Math.Min(ctx.OneLineMaxWidth, report.Length + 20), vPadding: 1, hPadding: 10));
+            }
             return Task.CompletedTask;
         }
 
@@ -289,7 +284,7 @@ namespace CCRepl.CommandSets
 
         private async Task TestAsync(ReplContext ctx, CommandArgs args, CancellationToken ct)
         {
-            Tokens tokens = args.GetRequired<string>(0).TokenizeParen();
+            Tokens tokens = args.GetR<string>(0).TokenizeParen();
             bool success = await ctx.TestAsync(tokens, ct);
             if (success) ctx.WriteLine($"No issues found: '{string.Join(' ', args)}'.");
             else ctx.WriteLine($"Failed test: '{string.Join(' ', args)}'.");

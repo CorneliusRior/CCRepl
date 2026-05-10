@@ -22,6 +22,7 @@ namespace CCRepl.Tools
         private Func<ReplContext, CommandArgs, CancellationToken, Task>? _executeAsync;
         private Func<ReplContext, CommandArgs, CancellationToken, Task<bool>>? _testAsync;
         private List<IArgSpec> _argSpecs = [];
+        private List<string> _options = [];
         private Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? _stringExecuteAsync;
         private Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? _stringTestAsync;
 
@@ -47,6 +48,7 @@ namespace CCRepl.Tools
                 executeAsync:       _executeAsync,
                 testAsync:          _testAsync,
                 argSpecs:           _argSpecs,
+                options:            _options,
                 stringExecuteAsync: _stringExecuteAsync,
                 stringTestAsync:    _stringTestAsync,
                 executeJsonAsync:   _executeJsonAsync,
@@ -91,6 +93,17 @@ namespace CCRepl.Tools
             _testAsync = testAsync;
             return this;
         }
+        public CommandBuilder Args(params ICmdArg[] args)
+        {
+            foreach (ICmdArg arg in args) _argSpecs.Add(arg.ToArgSpec());
+            return this;
+        }
+
+        public CommandBuilder Optn(params string[] opt)
+        {
+            _options = opt.ToList();
+            return this;
+        }
 
         public CommandBuilder StringExec(Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task> executeAsync)
         {
@@ -104,11 +117,6 @@ namespace CCRepl.Tools
             return this;
         }
 
-        public CommandBuilder Args(params ICmdArg[] args)
-        {
-            foreach (ICmdArg arg in args) _argSpecs.Add(arg.ToArgSpec());
-            return this;
-        }
 
         public CommandBuilder ExecJson<TPayload>(Func<ReplContext, TPayload, CancellationToken, Task> executeJsonAsync)
         {

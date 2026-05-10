@@ -75,8 +75,30 @@ namespace CCRepl.Models
             }
         }
 
-        public bool HasOption(string option) => Options.Contains(option);
-        public bool Opt(params string[] options) => Options.Any(HasOption);
+        public bool HasOption(string option) => Options.Any(s => s.Equals(option, StringComparison.OrdinalIgnoreCase));
+        public bool Opt(params string[] options) => options.Any(HasOption);
+        public bool HasOptStart(string start) => Options.Any(o => o.StartsWith(start, StringComparison.OrdinalIgnoreCase));
+        public bool OptStrt(params string[] options) => options.Any(HasOptStart);
+        
+        public string FirstOptionOf(params string[] options)
+        {
+            foreach (string opt in Options)
+            {
+                string? match = options.FirstOrDefault(s => opt.Equals(s, StringComparison.OrdinalIgnoreCase));
+                if (match is not null) return match;
+            }
+            return "";
+        }
+
+        public string FirstOptionStart(params string[] starts)
+        {
+            foreach (string opt in Options)
+            {
+                string? match = starts.FirstOrDefault(s => opt.StartsWith(s, StringComparison.OrdinalIgnoreCase));
+                if (match is not null) return match;
+            }
+            return "";
+        }
 
         public T? Get<T>(int pos)
         {
@@ -91,7 +113,8 @@ namespace CCRepl.Models
             return value is null ? fallback : value;
         }
 
-        public T GetRequired<T>(int pos)
+        // Get Required
+        public T GetR<T>(int pos)
         {
             T? value = Get<T>(pos);
             if (value is null) throw new ReplException($"Required value not present. pos = '{pos}', in command '{CommandAddress}'.");

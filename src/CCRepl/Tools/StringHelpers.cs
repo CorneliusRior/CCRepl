@@ -379,7 +379,33 @@ public static class StringHelpers
 
     public static string PresentList_ML(this IEnumerable<string> list, string title = "", string start = "{\n\t", string inter = ",\n\t", string end = "\n};") => title + ' ' + start + string.Join(inter, list) + end;
 
-    public static string PrintVec(this IEnumerable<string> list, [CallerArgumentExpression("list")] string name = "") => list.PresentList_ML(name);    
+    public static string PrintVec(this IEnumerable<string> list, [CallerArgumentExpression("list")] string name = "") => list.PresentList_ML(name);
+
+    // Replaces every instance of ' ', ',', '/', or combinations of those with '.' and trims, used for creating command statements.
+    public static string DotSeparated(this string text, bool removeDuplicates = true)
+    {
+        string r = text.Trim();
+        char[] dots = { '.', ' ', ',', '/' };
+        foreach (char c in dots) r = r.Replace(c, '.');
+        if (!removeDuplicates) return r;
+
+        StringBuilder sb = new();
+        bool lastDot = false;
+        foreach (char c in r)
+        {
+            if (c == '.')
+            {
+                if (!lastDot) sb.Append(c);
+                lastDot = true;
+            }
+            else
+            {
+                sb.Append(c);
+                lastDot = false;
+            }
+        }
+        return sb.ToString();
+    }
 }
 
 /// <summary>

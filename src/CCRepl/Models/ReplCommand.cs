@@ -17,6 +17,7 @@ public class ReplCommand
     public Func<ReplContext, CommandArgs, CancellationToken, Task<bool>>? TestAsync { get; init; }
     public bool CanNewTest => TestAsync is not null;
     public IReadOnlyList<IArgSpec> ArgSpecs { get; init; } = [];
+    public IReadOnlyList<string> Options { get; init; } = [];
 
     
     // String execute uses a string list, legacy.
@@ -47,14 +48,15 @@ public class ReplCommand
     [SetsRequiredMembers]
     public ReplCommand(
         string name,
+        IReadOnlyList<string>? aliases = null,
         Func<ReplContext, CommandArgs, CancellationToken, Task>? executeAsync = null,
         Func<ReplContext, CommandArgs, CancellationToken, Task<bool>>? testAsync = null,
         IReadOnlyList<IArgSpec>? argSpecs = null,
+        IReadOnlyList<string>? options = null,
         Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? stringExecuteAsync = null,
         Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? stringTestAsync = null,
         Func<ReplContext, object, CancellationToken, Task>? executeJsonAsync = null,
         Func<ReplContext, object, CancellationToken, Task<bool>>? testJsonAsync = null,
-        IReadOnlyList<string>? aliases = null,
         string? usage = null,
         string? description = null,
         IReadOnlyList<string>? examples = null,
@@ -65,14 +67,15 @@ public class ReplCommand
     )
     {
         Name = name;
+        Aliases = aliases ?? Array.Empty<string>();
         ExecuteAsync = executeAsync;
         TestAsync = testAsync;
         ArgSpecs = argSpecs ?? Array.Empty<IArgSpec>();
+        Options = options ?? Array.Empty<string>();
         StringExecuteAsync = stringExecuteAsync;
         StringTestAsync = stringTestAsync;
         ExecuteJsonAsync = executeJsonAsync;
         TestJsonAsync = testJsonAsync;
-        Aliases = aliases ?? Array.Empty<string>();
         Usage = usage;
         Description = description;
         Examples = examples ?? Array.Empty<string>();
@@ -91,6 +94,7 @@ public class ReplCommand
             sb.Append(Address);
             sb.Append(' ');
             foreach (IArgSpec spec in ArgSpecs) sb.Append(spec.Print()).Append(' ');
+            foreach (string opt in Options) sb.Append(opt).Append(' ');
             Usage = sb.ToString();
         }
     }
@@ -119,7 +123,7 @@ public class ReplCommand
         (Usage is not null ? $"Usage: {Usage}\n" : "") +
         (Description is not null ? $"Description: {Description}\n" : "") +
         (Examples.Count > 0 ? $"Examples:\n - \"{string.Join("\"\n - \"", Examples)}\"\n" : "") +
-        LongDescription ?? "";
+        (LongDescription is not null ? LongDescription + '\n' : "");
 
     public string PrintTree(int width, string namePrefix, string listPrefix)
     {

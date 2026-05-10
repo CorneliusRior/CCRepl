@@ -59,7 +59,7 @@ namespace CCRepl
         private async Task NewExecuteTestCmd(ReplContext ctx, CommandArgs args, CancellationToken ct)
         {
             ctx.WriteLine("Successfully executed.");
-            ctx.WriteLine($"A: {args.GetRequired<int>(0)}");
+            ctx.WriteLine($"A: {args.GetR<int>(0)}");
             ctx.WriteLine($"B: {args.Get<double>(1)}");
             ctx.WriteLine($"C: {args.Get<string>(2)}");
         }
