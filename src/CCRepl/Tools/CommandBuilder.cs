@@ -20,6 +20,7 @@ namespace CCRepl.Tools
         private readonly List<ReplCommand> _children = [];
 
         private Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? _executeAsync;
+        private Func<ReplContext, CommandArgs, CancellationToken, Task>? _newExec;
         private Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? _testAsync;
         private List<IArgSpec> _argSpecs = [];
 
@@ -43,6 +44,7 @@ namespace CCRepl.Tools
             return new ReplCommand(
                 name:               _name,
                 executeAsync:       _executeAsync,
+                newExec:            _newExec,
                 testAsync:          _testAsync,
                 executeJsonAsync:   _executeJsonAsync,
                 testJsonAsync:      _testJsonAsync,
@@ -79,6 +81,12 @@ namespace CCRepl.Tools
         public CommandBuilder Exec(Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task> executeAsync)
         {
             _executeAsync = executeAsync;
+            return this;
+        }
+
+        public CommandBuilder NewExec(Func<ReplContext, CommandArgs, CancellationToken, Task> newExec)
+        {
+            _newExec = newExec;
             return this;
         }
 

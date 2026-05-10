@@ -14,6 +14,10 @@ public class ReplCommand
     // Function:
     public Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? ExecuteAsync { get; init; }
     public bool CanExecute => ExecuteAsync is not null;
+    
+    // NewExecute: We will just replace execute with this eventually:
+    public Func<ReplContext, CommandArgs, CancellationToken, Task>? NewExec { get; init; }
+    public bool CanNewExecute => NewExec is not null;
 
     public Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? TestAsync { get; init; }
     public bool CanTest => TestAsync is not null;
@@ -42,6 +46,7 @@ public class ReplCommand
     public ReplCommand(
         string name,
         Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task>? executeAsync = null,
+        Func<ReplContext, CommandArgs, CancellationToken, Task>? newExec = null,
         Func<ReplContext, IReadOnlyList<string>, CancellationToken, Task<bool>>? testAsync = null,
         IReadOnlyList<IArgSpec>? argSpecs = null,
         Func<ReplContext, object, CancellationToken, Task>? executeJsonAsync = null,
@@ -58,6 +63,7 @@ public class ReplCommand
     {
         Name = name;
         ExecuteAsync = executeAsync;
+        NewExec = newExec;
         TestAsync = testAsync;
         ExecuteJsonAsync = executeJsonAsync;
         TestJsonAsync = testJsonAsync;

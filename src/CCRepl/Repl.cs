@@ -45,10 +45,25 @@ public sealed partial class Repl
         if (string.IsNullOrWhiteSpace(input)) return;
         try
         {
-            List<string> tokens = input.Tokenize();
-            string commandHead = tokens[0];
-            IReadOnlyList<string> args = tokens.Skip(1).ToList();
-            await ExecuteCommandAsync(commandHead, args, ct);
+            Tokens tokens = input.TokenizeParen();
+            ReplCommand cmd = FindCommand(tokens.CommandHead);
+            ReplContext ctx = new(this);
+            CommandArgs args = new(ctx, tokens, ct);
+
+            if (cmd.CanNewExecute)
+            {
+                await cmd.NewExec!(ctx, args, ct);
+            }
+            else if (cmd.CanExecute)
+            {
+                await cmd.ExecuteAsync!(ctx, tokens.ArgStrings, ct);
+            }
+            else throw new ReplException($"Command '{tokens.CommandHead}' has no ExecuteAsync method: cannot execute.");
+
+            //List<string> tokens = input.Tokenize();
+            //string commandHead = tokens[0];
+            //IReadOnlyList<string> args = tokens.Skip(1).ToList();
+            //await ExecuteCommandAsync(commandHead, args, ct);
         }
         catch (OperationCanceledException) { WriteLine($"Cancelled."); }
         catch (ReplUserException ex) { WriteLine($"Input Error, {ex.Location} {ex.Message}"); }
@@ -56,6 +71,7 @@ public sealed partial class Repl
         catch (Exception ex) { WriteLine($"Error: {ex.Message}"); }
     }
 
+    // Get rid of this later:
     /// <summary>
     /// Runs the ExecuteAsync method on the specified command with specified arguments. This is kept separate from ExecuteAsync so that commands can execute other commands directly.
     /// </summary>
