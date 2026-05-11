@@ -233,6 +233,24 @@ namespace CCRepl
             return filtered;
         }
 
+        /// <summary>
+        /// Sees how many commands can be found with a given search term.
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="searchTerm"></param>
+        /// <returns></returns>
+        public static int CommandSearchCount(this ReplContext ctx, bool includeAliases, string searchTerm = "", string? group = "")
+        {            
+            if (string.IsNullOrWhiteSpace(searchTerm)) return group == "" ? ctx.CommandIndex.Count() : ctx.CommandIndex.Count(it => it.Value.Group == group);
+            if (includeAliases)
+                return ctx.AliasIndex
+                    .Where(it => it.Key.StartsWith(searchTerm, StringComparison.OrdinalIgnoreCase))
+                    .DistinctBy(it => it.Value)
+                    .Count();
+            else
+                return ctx.CommandIndex.Count(it => it.Value.Address.StartsWith(searchTerm, StringComparison.OrdinalIgnoreCase));
+        }
+
         public static string BuildRootTree(this ReplContext ctx)
         {
             string Tree(int w)

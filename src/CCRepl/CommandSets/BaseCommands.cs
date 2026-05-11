@@ -43,7 +43,7 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 
                 Cmd("Aliases")
                 .Aliases("a", "als")
-                .Exec(HelpAliases)
+                .Exec(HelpAlias)
                 .Args(StrArg("Search Key", ArgMode.Optional, ""))
                 .Optn("-g")
                 .Description("Lists all aliases and their canonical names for all commands, or for all commands and aliases starting with Search Key is specified.")
@@ -179,7 +179,7 @@ Behaviour can be altered with options:
             return Task.CompletedTask;
         }
 
-        private Task HelpAliases(ReplContext ctx, CommandArgs args, CancellationToken ct)
+        private Task HelpAlias(ReplContext ctx, CommandArgs args, CancellationToken ct)
         {
             string inputKey = args.GetR<string>(0);
             string sk = inputKey.DotSeparated();
@@ -189,30 +189,47 @@ Behaviour can be altered with options:
                 ctx.AliasIndex
                 .Where(it => it.Key.StartsWith(sk, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(it => it.Value.Address);
+            
+            if (filtered.Count() == 0)
+            {
+                ctx.WriteLine($"No commands or aliases starting with '{sk}'.");
+                return Task.CompletedTask;
+            }
 
             int col = Math.Min(filtered.Max(kv => kv.Key.Length + kv.Value.Address.Length + 5), (ctx.OneLineMaxWidth - 10) / 2);
-
+            
             StringBuilder sb = new();
 
             if (args.HasOptStart("-g"))
             {
-                ctx.WriteLine("Not yet implemented.");
+                List<string?> groups = filtered.DistinctBy(it => it.Value.Group).Select(it => it.Value.Group).OrderBy(s => s == "Base" ? 0 : s is null ? 2 : 1).ThenBy(s => s).ToList();
+
+                foreach (string? g in groups)
+                {
+                    var gfiltered = filtered.Where(it => it.Value.Group == g);
+                    
+                    // Print banner:                    
+                    sb.AppendLine($" * {(g ?? "Ungrouped")} ({gfiltered.Count()} total aliases for {gfiltered.DistinctBy(it => it.Value).Count()} commands):\n");
+
+                    // Print body:
+                    foreach (var it in gfiltered) 
+                        sb.AppendLine(it.Key.ToIndexLine(it.Value.Address, col, ' '));
+                }
+
             }
             else
             {
-                int count = 0;
-                foreach(var it in filtered)
-                {
-                    sb.AppendLine(it.Key.ToIndexLine(it.Value.Address, col));
-                    count++;
-                }
-                ctx.WriteLine($"Printing all commands and aliases{(string.IsNullOrWhiteSpace(sk) ? "" : sk)} ({count} total):\n");
-                ctx.WriteLine(sb.ToString());
-
-                ctx.WriteLine();
-                string report = $"{count} total aliases{(string.IsNullOrWhiteSpace(sk) ? "" : $" starting with {sk} found")} for {ctx.SearchDictionary(sk).Count} commands.";
-                ctx.WriteLine(report.ToBox(boxWidth: Math.Min(ctx.OneLineMaxWidth, report.Length + 20), vPadding: 1, hPadding: 10));
+                foreach (var it in filtered)
+                    sb.AppendLine(it.Key.ToIndexLine(it.Value.Address, col, ' '));                    
             }
+
+            ctx.WriteLine($"Printing all commands and aliases{(string.IsNullOrWhiteSpace(sk) ? "" : sk)} ({filtered.Count()} total):\n");
+            ctx.WriteLine(sb.ToString());
+
+            ctx.WriteLine();
+            string report = $"{filtered.Count()} total aliases{(string.IsNullOrWhiteSpace(sk) ? "" : $" starting with {sk} found")} for {ctx.CommandSearchCount(true, sk)} commands.";
+            ctx.WriteLine(report.ToBox(boxWidth: Math.Min(ctx.OneLineMaxWidth, report.Length + 20), vPadding: 1, hPadding: 10));
+            
             return Task.CompletedTask;
         }
 
